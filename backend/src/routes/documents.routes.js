@@ -11,8 +11,8 @@ const { upload, handleMulterError, uploadsDir } = require('../config/upload');
 const { logAudit } = require('../config/audit');
 const logger = require('../config/logger');
 
-// Upload un fichier
-router.post('/', 
+// Upload un fichier (route /upload pour compatibilité frontend)
+router.post('/upload', 
   authenticate,
   requirePermission('documents.upload'),
   upload.single('file'),
@@ -59,6 +59,70 @@ router.post('/',
     }
 
     // Audit
+    await logAudit({
+      userId: req.user.id,
+      action: 'upload',
+      tableName: 'documents',
+      recordId: document.id,
+      newValues: document,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent')
+    });
+
+    logger.info('Document uploaded', { 
+      documentId: document.id, 
+      userId: req.user.id,
+      filename: req.file.filename 
+    });
+
+    res.status(201).json(document);
+  })
+);
+
+// Upload un fichier (route alternative)
+router.post('/', 
+  authenticate,
+  requirePermission('documents.upload'),
+  upload.single('file'),
+  handleMulterError,
+  asyncHandler(async (req, res) => {
+    if (!req.file) {
+      throw new AppError('Aucun fichier fourni', 400);
+    }
+
+    const { titre, type, description, objet_type, objet_id } = req.body;
+
+    if (!titre || !type) {
+      fs.unlinkSync(req.file.path);
+      throw new AppError('Titre et type requis', 400);
+    }
+
+    const result = await pool.query(
+      `INSERT INTO documents (titre, nom_fichier, chemin, type_mime, taille, type, description, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        titre,
+        req.file.filename,
+        req.file.path,
+        req.file.mimetype,
+        req.file.size,
+        type,
+        description || null,
+        req.user.id
+      ]
+    );
+
+    const document = result.rows[0];
+
+    if (objet_type && objet_id) {
+      await pool.query(
+        `INSERT INTO documents_liaisons (document_id, objet_type, objet_id)
+         VALUES ($1, $2, $3)`,
+        [document.id, objet_type, objet_id]
+      );
+    }
+
     await logAudit({
       userId: req.user.id,
       action: 'upload',
