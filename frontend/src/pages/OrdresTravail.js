@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -42,6 +43,7 @@ const getStatutColor = (statut) => {
 
 export default function OrdresTravail() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editOrdre, setEditOrdre] = useState(null);
   const [formData, setFormData] = useState({
@@ -196,7 +198,12 @@ export default function OrdresTravail() {
               </TableRow>
             ) : (
               ordres.map((ordre) => (
-                <TableRow key={ordre.id}>
+                <TableRow
+                  key={ordre.id}
+                  hover
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/ordres-travail/${ordre.id}`)}
+                >
                   <TableCell>{ordre.titre}</TableCell>
                   <TableCell>{ordre.actif_code}</TableCell>
                   <TableCell>{ordre.type}</TableCell>
@@ -215,14 +222,20 @@ export default function OrdresTravail() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => handleOpen(ordre)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpen(ordre);
+                      }}
                       color="primary"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(ordre.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(ordre.id);
+                      }}
                       color="error"
                     >
                       <DeleteIcon />

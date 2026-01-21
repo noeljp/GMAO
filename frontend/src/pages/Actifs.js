@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -30,6 +31,7 @@ import {
 
 export default function Actifs() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editActif, setEditActif] = useState(null);
   const [formData, setFormData] = useState({
@@ -179,7 +181,12 @@ export default function Actifs() {
               </TableRow>
             ) : (
               actifs.map((actif) => (
-                <TableRow key={actif.id}>
+                <TableRow
+                  key={actif.id}
+                  hover
+                  sx={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/actifs/${actif.id}`)}
+                >
                   <TableCell>{actif.code_interne}</TableCell>
                   <TableCell>{actif.description}</TableCell>
                   <TableCell>{actif.type_nom}</TableCell>
@@ -190,14 +197,20 @@ export default function Actifs() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => handleOpen(actif)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleOpen(actif);
+                      }}
                       color="primary"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(actif.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(actif.id);
+                      }}
                       color="error"
                     >
                       <DeleteIcon />

@@ -22,9 +22,14 @@ import {
   Build as BuildIcon,
   RequestPage as RequestPageIcon,
   People as PeopleIcon,
+  Search as SearchIcon,
+  Description as DescriptionIcon,
+  CalendarToday as CalendarIcon,
+  Assessment as AssessmentIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
+import NotificationCenter from './NotificationCenter';
 
 const drawerWidth = 240;
 
@@ -33,7 +38,11 @@ const menuItems = [
   { text: 'Sites', icon: <BusinessIcon />, path: '/sites' },
   { text: 'Actifs', icon: <InventoryIcon />, path: '/actifs' },
   { text: 'Ordres de travail', icon: <BuildIcon />, path: '/ordres-travail' },
+  { text: 'Planification', icon: <CalendarIcon />, path: '/planification' },
   { text: 'Demandes', icon: <RequestPageIcon />, path: '/demandes' },
+  { text: 'Rapports', icon: <AssessmentIcon />, path: '/rapports' },
+  { text: 'Recherche', icon: <SearchIcon />, path: '/search' },
+  { text: 'Documents', icon: <DescriptionIcon />, path: '/documents' },
   { text: 'Utilisateurs', icon: <PeopleIcon />, path: '/users' },
 ];
 
@@ -101,7 +110,8 @@ export default function Layout({ children }) {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
             Gestion de Maintenance
           </Typography>
-          <Typography variant="body1">
+          <NotificationCenter />
+          <Typography variant="body1" sx={{ ml: 2 }}>
             {user?.prenom} {user?.nom}
           </Typography>
         </Toolbar>

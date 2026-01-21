@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
   Box,
@@ -32,6 +33,7 @@ import { fr } from 'date-fns/locale';
 
 export default function Demandes() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editDemande, setEditDemande] = useState(null);
   const [formData, setFormData] = useState({
@@ -174,7 +176,11 @@ export default function Demandes() {
               </TableRow>
             ) : (
               demandes.map((demande) => (
-                <TableRow key={demande.id}>
+                <TableRow
+                  key={demande.id}
+                  onClick={() => navigate(`/demandes/${demande.id}`)}
+                  sx={{ cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' } }}
+                >
                   <TableCell>{demande.titre}</TableCell>
                   <TableCell>{demande.actif_code}</TableCell>
                   <TableCell>{demande.demandeur_nom}</TableCell>
@@ -189,14 +195,14 @@ export default function Demandes() {
                   <TableCell align="right">
                     <IconButton
                       size="small"
-                      onClick={() => handleOpen(demande)}
+                      onClick={(e) => { e.stopPropagation(); handleOpen(demande); }}
                       color="primary"
                     >
                       <EditIcon />
                     </IconButton>
                     <IconButton
                       size="small"
-                      onClick={() => handleDelete(demande.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(demande.id); }}
                       color="error"
                     >
                       <DeleteIcon />
