@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery } from 'react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
 import {
   Box,
@@ -14,25 +14,140 @@ import {
   Button,
   CircularProgress,
   Chip,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Alert,
 } from '@mui/material';
-import { Add as AddIcon } from '@mui/icons-material';
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+} from '@mui/icons-material';
 
 export default function Actifs() {
-  const { data: response, isLoading, error } = useQuery('actifs', async () => {
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [editActif, setEditActif] = useState(null);
+  const [formData, setFormData] = useState({
+    code_interne: '',
+    description: '',
+    type_actif_id: '',
+    site_id: '',
+    localisation: '',
+    num_serie: '',
+  });
+  const [error, setError] = useState('');
+
+  const { data: response, isLoading } = useQuery('actifs', async () => {
     const response = await axios.get('/api/actifs');
     return response.data;
   });
 
+  const { data: sitesResponse } = useQuery('sites', async () => {
+    const response = await axios.get('/api/sites');
+    return response.data;
+  });
+
+  const createMutation = useMutation(
+    (data) => axios.post('/api/actifs', data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('actifs');
+        handleClose();
+      },
+      onError: (err) => {
+        setError(err.response?.data?.error || 'Erreur lors de la création');
+      },
+    }
+  );
+
+  const updateMutation = useMutation(
+    ({ id, data }) => axios.patch(`/api/actifs/${id}`, data),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('actifs');
+        handleClose();
+      },
+      onError: (err) => {
+        setError(err.response?.data?.error || 'Erreur lors de la mise à jour');
+      },
+    }
+  );
+
+  const deleteMutation = useMutation(
+    (id) => axios.delete(`/api/actifs/${id}`),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('actifs');
+      },
+    }
+  );
+
+  const handleOpen = (actif = null) => {
+    if (actif) {
+      setEditActif(actif);
+      setFormData({
+        code_interne: actif.code_interne || '',
+        description: actif.description || '',
+        type_actif_id: actif.type_actif_id || '',
+        site_id: actif.site_id || '',
+        localisation: actif.localisation || '',
+        num_serie: actif.num_serie || '',
+      });
+    } else {
+      setEditActif(null);
+      setFormData({
+        code_interne: '',
+        description: '',
+        type_actif_id: '',
+        site_id: '',
+        localisation: '',
+        num_serie: '',
+      });
+    }
+    setError('');
+    setOpen(true);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    setEditActif(null);
+    setError('');
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (editActif) {
+      updateMutation.mutate({ id: editActif.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
+
+  const handleDelete = (id) => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer cet actif ?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+
   if (isLoading) return <CircularProgress />;
-  if (error) return <Typography color="error">Erreur lors du chargement des actifs</Typography>;
 
   const actifs = response?.data || [];
+  const sites = sitesResponse?.data || [];
 
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">Actifs</Typography>
-        <Button variant="contained" startIcon={<AddIcon />}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpen()}
+        >
           Nouvel actif
         </Button>
       </Box>
@@ -46,17 +161,18 @@ export default function Actifs() {
               <TableCell>Type</TableCell>
               <TableCell>Site</TableCell>
               <TableCell>Statut</TableCell>
+              <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {actifs?.length === 0 ? (
+            {actifs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center">
-                  Aucun actif disponible
+                <TableCell colSpan={6} align="center">
+                  Aucun actif disponible. Cliquez sur "Nouvel actif" pour commencer.
                 </TableCell>
               </TableRow>
             ) : (
-              actifs?.map((actif) => (
+              actifs.map((actif) => (
                 <TableRow key={actif.id}>
                   <TableCell>{actif.code_interne}</TableCell>
                   <TableCell>{actif.description}</TableCell>
@@ -65,12 +181,102 @@ export default function Actifs() {
                   <TableCell>
                     <Chip label={actif.statut_nom} size="small" color="primary" />
                   </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      size="small"
+                      onClick={() => handleOpen(actif)}
+                      color="primary"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleDelete(actif.id)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
                 </TableRow>
               ))
             )}
           </TableBody>
         </Table>
       </TableContainer>
+
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <form onSubmit={handleSubmit}>
+          <DialogTitle>
+            {editActif ? 'Modifier l\'actif' : 'Nouvel actif'}
+          </DialogTitle>
+          <DialogContent>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
+            <TextField
+              fullWidth
+              label="Code interne"
+              value={formData.code_interne}
+              onChange={(e) => setFormData({ ...formData, code_interne: e.target.value })}
+              required
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Description"
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              required
+              multiline
+              rows={3}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              select
+              label="Site"
+              value={formData.site_id}
+              onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
+              SelectProps={{ native: true }}
+              required
+              margin="normal"
+            >
+              <option value="">Sélectionner un site</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.nom}
+                </option>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth
+              label="Localisation"
+              value={formData.localisation}
+              onChange={(e) => setFormData({ ...formData, localisation: e.target.value })}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Numéro de série"
+              value={formData.num_serie}
+              onChange={(e) => setFormData({ ...formData, num_serie: e.target.value })}
+              margin="normal"
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleClose}>Annuler</Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={createMutation.isLoading || updateMutation.isLoading}
+            >
+              {editActif ? 'Modifier' : 'Créer'}
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 }

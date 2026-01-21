@@ -1,5 +1,7 @@
 import React from 'react';
-import { Grid, Paper, Typography, Box } from '@mui/material';
+import { useQuery } from 'react-query';
+import axios from 'axios';
+import { Grid, Paper, Typography, Box, CircularProgress } from '@mui/material';
 import {
   Inventory as InventoryIcon,
   Build as BuildIcon,
@@ -29,6 +31,15 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 export default function Dashboard() {
+  const { data: stats, isLoading } = useQuery('dashboard-stats', async () => {
+    const response = await axios.get('/api/dashboard/stats');
+    return response.data;
+  });
+
+  if (isLoading) return <CircularProgress />;
+
+  const statsData = stats?.data || {};
+
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -39,7 +50,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Actifs"
-            value="0"
+            value={statsData.total_actifs || 0}
             icon={<InventoryIcon fontSize="large" />}
             color="primary.main"
           />
@@ -47,7 +58,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="OT en cours"
-            value="0"
+            value={statsData.ot_en_cours || 0}
             icon={<BuildIcon fontSize="large" />}
             color="warning.main"
           />
@@ -55,7 +66,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="OT complétés"
-            value="0"
+            value={statsData.ot_termines || 0}
             icon={<CheckCircleIcon fontSize="large" />}
             color="success.main"
           />
@@ -63,7 +74,7 @@ export default function Dashboard() {
         <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Demandes"
-            value="0"
+            value={statsData.demandes_en_attente || 0}
             icon={<WarningIcon fontSize="large" />}
             color="error.main"
           />

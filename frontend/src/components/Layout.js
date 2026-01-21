@@ -21,6 +21,7 @@ import {
   Inventory as InventoryIcon,
   Build as BuildIcon,
   RequestPage as RequestPageIcon,
+  People as PeopleIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
@@ -33,6 +34,7 @@ const menuItems = [
   { text: 'Actifs', icon: <InventoryIcon />, path: '/actifs' },
   { text: 'Ordres de travail', icon: <BuildIcon />, path: '/ordres-travail' },
   { text: 'Demandes', icon: <RequestPageIcon />, path: '/demandes' },
+  { text: 'Utilisateurs', icon: <PeopleIcon />, path: '/users' },
 ];
 
 export default function Layout({ children }) {

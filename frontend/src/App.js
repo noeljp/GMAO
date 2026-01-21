@@ -9,6 +9,7 @@ import Sites from './pages/Sites';
 import Actifs from './pages/Actifs';
 import OrdresTravail from './pages/OrdresTravail';
 import Demandes from './pages/Demandes';
+import Users from './pages/Users';
 import { useAuth } from './context/AuthContext';
 
 const theme = createTheme({
@@ -44,6 +45,7 @@ function App() {
                   <Route path="/actifs" element={<Actifs />} />
                   <Route path="/ordres-travail" element={<OrdresTravail />} />
                   <Route path="/demandes" element={<Demandes />} />
+                  <Route path="/users" element={<Users />} />
                 </Routes>
               </Layout>
             </PrivateRoute>
