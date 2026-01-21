@@ -42,6 +42,8 @@ app.use('/api/dashboard', require('./routes/dashboard.routes'));
 app.use('/api/documents', require('./routes/documents.routes'));
 app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/notifications', require('./routes/notifications.routes'));
+app.use('/api/mqtt', require('./routes/mqtt.routes'));
+app.use('/api/compteurs', require('./routes/compteurs.routes'));
 
 // Health check
 app.get('/health', (req, res) => {
@@ -56,9 +58,26 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Route non trouvée' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
   console.log(`Server running on port ${PORT}`);
+  
+  // Démarrer le service MQTT
+  const mqttService = require('./config/mqtt');
+  try {
+    await mqttService.startAll();
+    logger.info('MQTT Service initialized');
+  } catch (error) {
+    logger.error('Error starting MQTT service:', error);
+  }
+});
+
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+  logger.info('SIGTERM received, closing server...');
+  const mqttService = require('./config/mqtt');
+  await mqttService.stopAll();
+  process.exit(0);
 });
 
 module.exports = app;

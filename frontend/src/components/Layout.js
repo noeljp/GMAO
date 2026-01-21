@@ -27,6 +27,7 @@ import {
   CalendarToday as CalendarIcon,
   Assessment as AssessmentIcon,
   Logout as LogoutIcon,
+  CloudQueue as CloudQueueIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
@@ -43,6 +44,7 @@ const menuItems = [
   { text: 'Rapports', icon: <AssessmentIcon />, path: '/rapports' },
   { text: 'Recherche', icon: <SearchIcon />, path: '/search' },
   { text: 'Documents', icon: <DescriptionIcon />, path: '/documents' },
+  { text: 'Configuration MQTT', icon: <CloudQueueIcon />, path: '/configuration/mqtt' },
   { text: 'Utilisateurs', icon: <PeopleIcon />, path: '/users' },
 ];
 

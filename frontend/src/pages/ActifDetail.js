@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
@@ -18,20 +18,25 @@ import {
   IconButton,
   Card,
   CardContent,
+  Tabs,
+  Tab,
 } from '@mui/material';
 import {
   ArrowBack as ArrowBackIcon,
   Edit as EditIcon,
   History as HistoryIcon,
   Description as DescriptionIcon,
+  Speed as SpeedIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import CompteursActif from '../components/CompteursActif';
 
 export default function ActifDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState(0);
 
   const { data: actif, isLoading } = useQuery(['actif', id], async () => {
     const response = await axios.get(`/api/actifs/${id}`);
@@ -74,6 +79,13 @@ export default function ActifDetail() {
         </Button>
       </Box>
 
+      <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }}>
+        <Tab label="Informations" />
+        <Tab label="Compteurs & Seuils" icon={<SpeedIcon />} iconPosition="start" />
+        <Tab label="Historique" icon={<HistoryIcon />} iconPosition="start" />
+      </Tabs>
+
+      {activeTab === 0 && (
       <Grid container spacing={3}>
         {/* Informations principales */}
         <Grid item xs={12} md={6}>
@@ -227,35 +239,50 @@ export default function ActifDetail() {
             )}
           </Paper>
         </Grid>
+      </Grid>
+      )}
 
-        {/* Historique */}
-        <Grid item xs={12}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              <HistoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-              Historique des modifications
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            {history.length > 0 ? (
-              <Table size="small">
-                <TableBody>
-                  {history.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell>
-                        {entry.created_at && format(new Date(entry.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
-                      </TableCell>
-                      <TableCell>{entry.user_nom}</TableCell>
-                      <TableCell>{entry.action}</TableCell>
-                      <TableCell>{entry.details}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <Typography color="textSecondary">Aucun historique disponible</Typography>
-            )}
-          </Paper>
+      {/* Onglet Compteurs */}
+      {activeTab === 1 && (
+        <CompteursActif actifId={id} />
+      )}
+
+      {/* Onglet Historique */}
+      {activeTab === 2 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Paper sx={{ p: 3 }}>
+              <Typography variant="h6" gutterBottom>
+                <HistoryIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Historique des modifications
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              {history.length > 0 ? (
+                <Table size="small">
+                  <TableBody>
+                    {history.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell>
+                          {entry.created_at && format(new Date(entry.created_at), 'dd/MM/yyyy HH:mm', { locale: fr })}
+                        </TableCell>
+                        <TableCell>{entry.user_nom}</TableCell>
+                        <TableCell>{entry.action}</TableCell>
+                        <TableCell>{entry.details}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Typography color="textSecondary">Aucun historique disponible</Typography>
+              )}
+            </Paper>
+          </Grid>
         </Grid>
+      )}
+    </Box>
+  );
+}
+
       </Grid>
     </Box>
   );

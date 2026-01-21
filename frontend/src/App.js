@@ -1,5 +1,6 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Layout from './components/Layout';
@@ -18,7 +19,17 @@ import Documents from './pages/Documents';
 import Notifications from './pages/Notifications';
 import Planification from './pages/Planification';
 import Rapports from './pages/Rapports';
+import ConfigurationMQTT from './pages/ConfigurationMQTT';
 import { useAuth } from './context/AuthContext';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 const theme = createTheme({
   palette: {
@@ -38,9 +49,10 @@ function PrivateRoute({ children }) {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Routes>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Routes>
         <Route path="/login" element={<Login />} />
         <Route
           path="/*"
@@ -62,6 +74,7 @@ function App() {
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/planification" element={<Planification />} />
                   <Route path="/rapports" element={<Rapports />} />
+                  <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
                 </Routes>
               </Layout>
             </PrivateRoute>
@@ -69,6 +82,7 @@ function App() {
         />
       </Routes>
     </ThemeProvider>
+    </QueryClientProvider>
   );
 }
 
