@@ -4,6 +4,17 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/database');
 const { authenticate } = require('../middleware/auth.middleware');
 
+// Get actifs types
+router.get('/types', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM actifs_types ORDER BY nom');
+    res.json({ data: result.rows });
+  } catch (error) {
+    console.error('Error fetching actifs types:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération des types' });
+  }
+});
+
 // Get all actifs with filters
 router.get('/', authenticate, async (req, res) => {
   try {

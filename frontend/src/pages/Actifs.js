@@ -35,10 +35,10 @@ export default function Actifs() {
   const [formData, setFormData] = useState({
     code_interne: '',
     description: '',
-    type_actif_id: '',
+    type_id: '',
     site_id: '',
     localisation: '',
-    num_serie: '',
+    numero_serie: '',
   });
   const [error, setError] = useState('');
 
@@ -49,6 +49,11 @@ export default function Actifs() {
 
   const { data: sitesResponse } = useQuery('sites', async () => {
     const response = await axios.get('/api/sites');
+    return response.data;
+  });
+
+  const { data: typesResponse } = useQuery('actifs-types', async () => {
+    const response = await axios.get('/api/actifs/types');
     return response.data;
   });
 
@@ -93,20 +98,20 @@ export default function Actifs() {
       setFormData({
         code_interne: actif.code_interne || '',
         description: actif.description || '',
-        type_actif_id: actif.type_actif_id || '',
+        type_id: actif.type_id || '',
         site_id: actif.site_id || '',
         localisation: actif.localisation || '',
-        num_serie: actif.num_serie || '',
+        numero_serie: actif.numero_serie || '',
       });
     } else {
       setEditActif(null);
       setFormData({
         code_interne: '',
         description: '',
-        type_actif_id: '',
+        type_id: '',
         site_id: '',
         localisation: '',
-        num_serie: '',
+        numero_serie: '',
       });
     }
     setError('');
@@ -138,6 +143,7 @@ export default function Actifs() {
 
   const actifs = response?.data || [];
   const sites = sitesResponse?.data || [];
+  const types = typesResponse?.data || [];
 
   return (
     <Box>
@@ -236,6 +242,23 @@ export default function Actifs() {
             <TextField
               fullWidth
               select
+              label="Type d'actif"
+              value={formData.type_id}
+              onChange={(e) => setFormData({ ...formData, type_id: e.target.value })}
+              SelectProps={{ native: true }}
+              required
+              margin="normal"
+            >
+              <option value="">Sélectionner un type</option>
+              {types.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.nom}
+                </option>
+              ))}
+            </TextField>
+            <TextField
+              fullWidth
+              select
               label="Site"
               value={formData.site_id}
               onChange={(e) => setFormData({ ...formData, site_id: e.target.value })}
@@ -260,8 +283,8 @@ export default function Actifs() {
             <TextField
               fullWidth
               label="Numéro de série"
-              value={formData.num_serie}
-              onChange={(e) => setFormData({ ...formData, num_serie: e.target.value })}
+              value={formData.numero_serie}
+              onChange={(e) => setFormData({ ...formData, numero_serie: e.target.value })}
               margin="normal"
             />
           </DialogContent>
