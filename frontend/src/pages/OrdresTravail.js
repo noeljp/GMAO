@@ -203,10 +203,10 @@ export default function OrdresTravail() {
                   <TableCell>{ordre.priorite}</TableCell>
                   <TableCell>{ordre.technicien_nom}</TableCell>
                   <TableCell>
-                    <Chip 
-                      label={ordre.statut} 
-                      size="small" 
-                      color={getStatutColor(ordre.statut)} 
+                    <Chip
+                      label={ordre.statut}
+                      size="small"
+                      color={getStatutColor(ordre.statut)}
                     />
                   </TableCell>
                   <TableCell>
@@ -345,3 +345,6 @@ export default function OrdresTravail() {
           </DialogActions>
         </form>
       </Dialog>
+    </Box>
+  );
+}

@@ -298,7 +298,3 @@ export default function Demandes() {
     </Box>
   );
 }
-      </TableContainer>
-    </Box>
-  );
-}

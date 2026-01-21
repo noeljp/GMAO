@@ -266,24 +266,3 @@ export default function Sites() {
     </Box>
   );
 }
-              <TableRow>
-                <TableCell colSpan={4} align="center">
-                  Aucun site disponible
-                </TableCell>
-              </TableRow>
-            ) : (
-              sites?.map((site) => (
-                <TableRow key={site.id}>
-                  <TableCell>{site.code}</TableCell>
-                  <TableCell>{site.nom}</TableCell>
-                  <TableCell>{site.adresse}</TableCell>
-                  <TableCell>{site.timezone}</TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
-}
