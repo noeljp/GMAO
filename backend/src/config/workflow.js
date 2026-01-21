@@ -168,13 +168,19 @@ async function getAvailableTransitions(userId, entite, currentStatut) {
   for (const row of result.rows) {
     // Vérifier si l'utilisateur a le rôle requis
     if (!row.roles_autorises || row.roles_autorises.length === 0) {
-      transitions.push(row.statut_destination);
+      transitions.push({
+        statut_destination: row.statut_destination,
+        roles_autorises: row.roles_autorises
+      });
       continue;
     }
 
     for (const role of row.roles_autorises) {
       if (await hasRole(userId, role)) {
-        transitions.push(row.statut_destination);
+        transitions.push({
+          statut_destination: row.statut_destination,
+          roles_autorises: row.roles_autorises
+        });
         break;
       }
     }

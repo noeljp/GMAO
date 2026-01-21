@@ -59,7 +59,7 @@ export default function OrdreDetail() {
   });
 
   const { data: historique } = useQuery(['ordre-historique', id], async () => {
-    const response = await axios.get(`/api/ordres-travail/${id}/historique`);
+    const response = await axios.get(`/api/ordres-travail/${id}/history`);
     return response.data;
   });
 
@@ -95,7 +95,7 @@ export default function OrdreDetail() {
   const handleTransition = () => {
     if (selectedTransition) {
       transitionMutation.mutate({
-        transition: selectedTransition.nom,
+        nouveau_statut: selectedTransition.statut_destination,
         commentaire,
       });
     }
@@ -104,7 +104,7 @@ export default function OrdreDetail() {
   if (isLoading) return <CircularProgress />;
   if (!ordre) return <Typography>Ordre de travail non trouvé</Typography>;
 
-  const availableTransitions = transitions?.data || [];
+  const availableTransitions = transitions?.transitions || [];
   const docs = documents?.data || [];
   const history = historique?.data || [];
 
@@ -240,16 +240,16 @@ export default function OrdreDetail() {
             </Typography>
             <Divider sx={{ mb: 2 }} />
             {availableTransitions.length > 0 ? (
-              availableTransitions.map((transition) => (
+              availableTransitions.map((transition, index) => (
                 <Button
-                  key={transition.nom}
+                  key={index}
                   fullWidth
                   variant="contained"
                   startIcon={<PlayArrowIcon />}
                   onClick={() => handleOpenTransition(transition)}
                   sx={{ mb: 1 }}
                 >
-                  {transition.libelle || transition.nom}
+                  → {transition.statut_destination}
                 </Button>
               ))
             ) : (

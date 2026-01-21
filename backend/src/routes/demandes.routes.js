@@ -84,7 +84,7 @@ router.patch('/:id/transition',
     const { nouveau_statut, commentaire } = req.body;
     const result = await executeTransition({
       userId: req.user.id,
-      entite: 'demande_intervention',
+      entite: 'demande',
       entiteId: req.params.id,
       nouveauStatut: nouveau_statut,
       commentaire,
@@ -92,7 +92,7 @@ router.patch('/:id/transition',
     });
 
     // Récupérer les transitions disponibles
-    const transitions = await getAvailableTransitions(req.user.id, 'demande_intervention', nouveau_statut);
+    const transitions = await getAvailableTransitions(req.user.id, 'demande', nouveau_statut);
     
     res.json({
       ...result,
@@ -116,7 +116,7 @@ router.get('/:id/transitions',
 
     const transitions = await getAvailableTransitions(
       req.user.id, 
-      'demande_intervention', 
+      'demande', 
       result.rows[0].statut
     );
     
@@ -128,7 +128,7 @@ router.get('/:id/transitions',
 router.get('/:id/history', 
   authenticate,
   asyncHandler(async (req, res) => {
-    const history = await getWorkflowHistory('demande_intervention', req.params.id);
+    const history = await getWorkflowHistory('demande', req.params.id);
     res.json({ data: history });
   })
 );

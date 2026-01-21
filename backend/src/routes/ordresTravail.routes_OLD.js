@@ -43,6 +43,30 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
+// Get OT by ID
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT ot.*,
+             a.code_interne as actif_code,
+             a.description as actif_description,
+             u.prenom || ' ' || u.nom as technicien_nom
+      FROM ordres_travail ot
+      LEFT JOIN actifs a ON ot.actif_id = a.id
+      LEFT JOIN utilisateurs u ON ot.technicien_id = u.id
+      WHERE ot.id = $1
+    `, [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Ordre de travail non trouvé' });
+    }
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching OT:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de l\'ordre de travail' });
+  }
+});
+
 // Create OT
 router.post('/', authenticate, [
   body('titre').trim().notEmpty().withMessage('Titre requis'),
@@ -69,10 +93,7 @@ router.post('/', authenticate, [
   }
 });
 
-// ==========================================
-// ROUTES SPÉCIFIQUES (AVANT /:id)
-// ==========================================
-
+// Update OT status
 // Transition de statut avec workflow
 router.patch('/:id/transition', 
   authenticate,
@@ -81,7 +102,6 @@ router.patch('/:id/transition',
     body('commentaire').optional()
   ],
   asyncHandler(async (req, res) => {
-    console.log('=== ROUTE TRANSITION CALLED ===', req.params.id);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       throw new AppError('Validation échouée', 400, errors.array());
@@ -157,34 +177,6 @@ router.patch('/:id/status', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error updating OT status:', error);
     res.status(500).json({ error: 'Erreur lors de la mise à jour du statut' });
-  }
-});
-
-// ==========================================
-// ROUTE GÉNÉRIQUE (DOIT ÊTRE EN DERNIER)
-// ==========================================
-
-// Get OT by ID
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    const result = await pool.query(`
-      SELECT ot.*,
-             a.code_interne as actif_code,
-             a.description as actif_description,
-             u.prenom || ' ' || u.nom as technicien_nom
-      FROM ordres_travail ot
-      LEFT JOIN actifs a ON ot.actif_id = a.id
-      LEFT JOIN utilisateurs u ON ot.technicien_id = u.id
-      WHERE ot.id = $1
-    `, [req.params.id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Ordre de travail non trouvé' });
-    }
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error('Error fetching OT:', error);
-    res.status(500).json({ error: 'Erreur lors de la récupération de l\'ordre de travail' });
   }
 });
 
