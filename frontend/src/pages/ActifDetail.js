@@ -282,8 +282,3 @@ export default function ActifDetail() {
     </Box>
   );
 }
-
-      </Grid>
-    </Box>
-  );
-}
