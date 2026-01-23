@@ -111,7 +111,7 @@ Docker Compose version v2.23.3-desktop.2
    - ✅ **"Git Bash Here"**
    - ✅ **"Git GUI Here"**
    - Éditeur : **Visual Studio Code** (si installé)
-   - PATH : **"Git from the command line and also from 3rd-party software"**
+   - PA   sudo ss -tulpn | egrep ':3000 |:3010 |:5010 ' || trueTH : **"Git from the command line and also from 3rd-party software"**
    - HTTPS : **"Use the OpenSSL library"**
    - Line endings : **"Checkout Windows-style, commit Unix-style"**
    - Terminal : **"Use Windows' default console window"**
@@ -305,14 +305,25 @@ curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
 # Installer Node.js et npm
 sudo dnf install -y nodejs
 
-# Vérifier l'installation
-node --version
-npm --version
-```
-
-**Méthode 2 : Via module dnf**
-
+# Vérifier l'installation :
 ```bash
+docker --version
+docker compose version
+
+# Vérifier si une variable DOCKER_HOST forcée redirige vers Podman (socket rootless)
+echo "DOCKER_HOST=$DOCKER_HOST"
+
+# Si DOCKER_HOST pointe vers un socket Podman (ex. unix:///run/user/1000/podman/podman.sock)
+# ou un autre endpoint non désiré, réinitialisez-le pour utiliser le socket Docker système :
+unset DOCKER_HOST
+
+# Si vous venez d'ajouter votre utilisateur au groupe 'docker', appliquez la membership
+# sans vous déconnecter :
+newgrp docker
+
+# Tester Docker sans sudo
+docker run hello-world
+```
 # Lister les versions disponibles
 sudo dnf module list nodejs
 
@@ -341,8 +352,8 @@ sudo dnf install -y gcc-c++ make python3
 sudo systemctl status firewalld
 
 # Ouvrir les ports nécessaires
-sudo firewall-cmd --permanent --add-port=3000/tcp   # Frontend
-sudo firewall-cmd --permanent --add-port=5000/tcp   # Backend API
+sudo firewall-cmd --permanent --add-port=3010/tcp   # Frontend
+sudo firewall-cmd --permanent --add-port=5010/tcp   # Backend API
 sudo firewall-cmd --permanent --add-port=5432/tcp   # PostgreSQL (si accès externe nécessaire)
 
 # Recharger la configuration
