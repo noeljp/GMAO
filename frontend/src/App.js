@@ -17,7 +17,7 @@ import Users from './pages/Users';
 import Search from './pages/Search';
 import Documents from './pages/Documents';
 import Notifications from './pages/Notifications';
-import Planification from './pages/Planification';
+import PlanificationEnhanced from './pages/PlanificationEnhanced';
 import Rapports from './pages/Rapports';
 import ConfigurationMQTT from './pages/ConfigurationMQTT';
 import { useAuth } from './context/AuthContext';
@@ -72,7 +72,7 @@ function App() {
                   <Route path="/search" element={<Search />} />
                   <Route path="/documents" element={<Documents />} />
                   <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/planification" element={<Planification />} />
+                  <Route path="/planification" element={<PlanificationEnhanced />} />
                   <Route path="/rapports" element={<Rapports />} />
                   <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
                 </Routes>

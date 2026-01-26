@@ -16,3 +16,86 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* React Big Calendar Styles */
+.rbc-calendar {
+  font-family: inherit;
+}
+
+.rbc-header {
+  padding: 10px 3px;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 2px solid #ddd;
+}
+
+.rbc-today {
+  background-color: #e3f2fd;
+}
+
+.rbc-event {
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: white;
+  font-size: 12px;
+}
+
+.rbc-event:hover {
+  cursor: pointer;
+  opacity: 0.8;
+}
+
+.rbc-selected {
+  background-color: #1976d2 !important;
+}
+
+.rbc-toolbar {
+  padding: 10px 0;
+  margin-bottom: 10px;
+}
+
+.rbc-toolbar button {
+  color: #373a3c;
+  border: 1px solid #ccc;
+  background: white;
+  padding: 8px 16px;
+  margin: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.rbc-toolbar button:hover {
+  background-color: #f5f5f5;
+}
+
+.rbc-toolbar button.rbc-active {
+  background-color: #1976d2;
+  color: white;
+  border-color: #1976d2;
+}
+
+.rbc-toolbar button.rbc-active:hover {
+  background-color: #1565c0;
+}
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .rbc-toolbar {
+    flex-direction: column;
+  }
+  
+  .rbc-toolbar-label {
+    margin: 10px 0;
+  }
+  
+  .rbc-header {
+    font-size: 12px;
+    padding: 5px 2px;
+  }
+  
+  .rbc-event {
+    font-size: 10px;
+    padding: 1px 3px;
+  }
+}
