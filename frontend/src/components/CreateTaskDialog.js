@@ -23,6 +23,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { fr } from 'date-fns/locale';
 import { addMinutes } from 'date-fns';
 import axios from 'axios';
+import { useNotification } from '../context/NotificationContext';
 
 const TASK_TYPES = [
   { value: 'correctif', label: 'Correctif' },
@@ -38,6 +39,7 @@ const PRIORITY_LEVELS = [
 ];
 
 export default function CreateTaskDialog({ open, onClose, onTaskCreated }) {
+  const { showNotification } = useNotification();
   const [loading, setLoading] = useState(false);
   const [conflicts, setConflicts] = useState([]);
   const [actifs, setActifs] = useState([]);
@@ -129,7 +131,12 @@ export default function CreateTaskDialog({ open, onClose, onTaskCreated }) {
       // Check if there are conflicts
       if (response.data.has_conflicts) {
         setConflicts(response.data.conflict_details?.conflicts || []);
+        showNotification(
+          'Tâche créée avec des conflits de ressources. Veuillez les résoudre.',
+          'warning'
+        );
       } else {
+        showNotification('Tâche créée avec succès', 'success');
         // Success - close and refresh
         if (onTaskCreated) {
           onTaskCreated(response.data);
@@ -138,7 +145,11 @@ export default function CreateTaskDialog({ open, onClose, onTaskCreated }) {
       }
     } catch (error) {
       console.error('Error creating task:', error);
-      alert('Erreur lors de la création de la tâche: ' + (error.response?.data?.error || error.message));
+      showNotification(
+        'Erreur lors de la création de la tâche: ' + 
+        (error.response?.data?.error || error.message),
+        'error'
+      );
     } finally {
       setLoading(false);
     }

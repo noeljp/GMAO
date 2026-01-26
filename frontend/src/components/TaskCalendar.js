@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../context/NotificationContext';
 
 const locales = { fr };
 const localizer = dateFnsLocalizer({
@@ -64,6 +65,7 @@ const getStatusColor = (statut) => {
 
 export default function TaskCalendar({ ordres, onRefresh, filters }) {
   const navigate = useNavigate();
+  const { showNotification } = useNotification();
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -120,17 +122,23 @@ export default function TaskCalendar({ ordres, onRefresh, filters }) {
           date_prevue_fin: end.toISOString(),
         });
         
+        showNotification('Tâche reprogrammée avec succès', 'success');
+        
         if (onRefresh) {
           await onRefresh();
         }
       } catch (error) {
         console.error('Error rescheduling task:', error);
-        alert('Erreur lors de la reprogrammation de la tâche');
+        showNotification(
+          'Erreur lors de la reprogrammation de la tâche: ' + 
+          (error.response?.data?.error || error.message),
+          'error'
+        );
       } finally {
         setIsUpdating(false);
       }
     },
-    [onRefresh]
+    [onRefresh, showNotification]
   );
 
   // Handle event resize
@@ -143,17 +151,23 @@ export default function TaskCalendar({ ordres, onRefresh, filters }) {
           date_prevue_fin: end.toISOString(),
         });
         
+        showNotification('Durée de la tâche modifiée avec succès', 'success');
+        
         if (onRefresh) {
           await onRefresh();
         }
       } catch (error) {
         console.error('Error resizing task:', error);
-        alert('Erreur lors de la modification de la durée');
+        showNotification(
+          'Erreur lors de la modification de la durée: ' + 
+          (error.response?.data?.error || error.message),
+          'error'
+        );
       } finally {
         setIsUpdating(false);
       }
     },
-    [onRefresh]
+    [onRefresh, showNotification]
   );
 
   // Custom event style

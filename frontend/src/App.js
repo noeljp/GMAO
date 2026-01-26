@@ -21,6 +21,7 @@ import PlanificationEnhanced from './pages/PlanificationEnhanced';
 import Rapports from './pages/Rapports';
 import ConfigurationMQTT from './pages/ConfigurationMQTT';
 import { useAuth } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,37 +52,39 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <PrivateRoute>
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/sites" element={<Sites />} />
-                  <Route path="/actifs" element={<Actifs />} />
-                  <Route path="/actifs/:id" element={<ActifDetail />} />
-                  <Route path="/ordres-travail" element={<OrdresTravail />} />
-                  <Route path="/ordres-travail/:id" element={<OrdreDetail />} />
-                  <Route path="/demandes" element={<Demandes />} />
-                  <Route path="/demandes/:id" element={<DemandeDetail />} />
-                  <Route path="/users" element={<Users />} />
-                  <Route path="/search" element={<Search />} />
-                  <Route path="/documents" element={<Documents />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/planification" element={<PlanificationEnhanced />} />
-                  <Route path="/rapports" element={<Rapports />} />
-                  <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
-                </Routes>
-              </Layout>
-            </PrivateRoute>
-          }
-        />
-      </Routes>
-    </ThemeProvider>
+        <NotificationProvider>
+          <CssBaseline />
+          <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/*"
+            element={
+              <PrivateRoute>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<Dashboard />} />
+                    <Route path="/sites" element={<Sites />} />
+                    <Route path="/actifs" element={<Actifs />} />
+                    <Route path="/actifs/:id" element={<ActifDetail />} />
+                    <Route path="/ordres-travail" element={<OrdresTravail />} />
+                    <Route path="/ordres-travail/:id" element={<OrdreDetail />} />
+                    <Route path="/demandes" element={<Demandes />} />
+                    <Route path="/demandes/:id" element={<DemandeDetail />} />
+                    <Route path="/users" element={<Users />} />
+                    <Route path="/search" element={<Search />} />
+                    <Route path="/documents" element={<Documents />} />
+                    <Route path="/notifications" element={<Notifications />} />
+                    <Route path="/planification" element={<PlanificationEnhanced />} />
+                    <Route path="/rapports" element={<Rapports />} />
+                    <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
+                  </Routes>
+                </Layout>
+              </PrivateRoute>
+            }
+          />
+        </Routes>
+        </NotificationProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }
