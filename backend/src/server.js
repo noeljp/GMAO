@@ -44,6 +44,7 @@ app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/notifications', require('./routes/notifications.routes'));
 app.use('/api/mqtt', require('./routes/mqtt.routes'));
 app.use('/api/compteurs', require('./routes/compteurs.routes'));
+app.use('/api/resources', require('./routes/resources.routes'));
 
 // Health check
 app.get('/health', (req, res) => {
