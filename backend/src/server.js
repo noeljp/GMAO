@@ -49,6 +49,7 @@ app.use('/api/compteurs', require('./routes/compteurs.routes'));
 app.use('/api/resources', require('./routes/resources.routes'));
 app.use('/api/ollama', require('./routes/ollama.routes'));
 app.use('/api/pieces', require('./routes/pieces.routes'));
+app.use('/api/whisper', require('./routes/whisper.routes'));
 
 // Health check
 app.get('/health', (req, res) => {
