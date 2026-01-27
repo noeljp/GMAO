@@ -28,6 +28,8 @@ import {
   Assessment as AssessmentIcon,
   Logout as LogoutIcon,
   CloudQueue as CloudQueueIcon,
+  Category as CategoryIcon,
+  Assignment as AssignmentIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
@@ -38,9 +40,11 @@ const menuItems = [
   { text: 'Tableau de bord', icon: <DashboardIcon />, path: '/' },
   { text: 'Sites', icon: <BusinessIcon />, path: '/sites' },
   { text: 'Actifs', icon: <InventoryIcon />, path: '/actifs' },
+  { text: 'Types d\'actifs', icon: <CategoryIcon />, path: '/types-actifs' },
   { text: 'Ordres de travail', icon: <BuildIcon />, path: '/ordres-travail' },
   { text: 'Planification', icon: <CalendarIcon />, path: '/planification' },
   { text: 'Demandes', icon: <RequestPageIcon />, path: '/demandes' },
+  { text: 'Templates de Maintenance', icon: <AssignmentIcon />, path: '/templates-maintenance' },
   { text: 'Rapports', icon: <AssessmentIcon />, path: '/rapports' },
   { text: 'Recherche', icon: <SearchIcon />, path: '/search' },
   { text: 'Documents', icon: <DescriptionIcon />, path: '/documents' },

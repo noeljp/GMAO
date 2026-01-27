@@ -16,8 +16,6 @@ import {
   TableCell,
   Divider,
   IconButton,
-  Card,
-  CardContent,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -33,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import DocumentUpload from '../components/DocumentUpload';
 
 export default function OrdreDetail() {
   const { id } = useParams();
@@ -53,18 +52,13 @@ export default function OrdreDetail() {
     return response.data;
   });
 
-  const { data: documents } = useQuery(['ordre-documents', id], async () => {
-    const response = await axios.get(`/api/documents?entity_type=ordre_travail&entity_id=${id}`);
-    return response.data;
-  });
-
   const { data: historique } = useQuery(['ordre-historique', id], async () => {
     const response = await axios.get(`/api/ordres-travail/${id}/history`);
     return response.data;
   });
 
   const transitionMutation = useMutation(
-    (data) => axios.post(`/api/ordres-travail/${id}/transition`, data),
+    (data) => axios.patch(`/api/ordres-travail/${id}/transition`, data),
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['ordre', id]);
@@ -105,7 +99,7 @@ export default function OrdreDetail() {
   if (!ordre) return <Typography>Ordre de travail non trouvé</Typography>;
 
   const availableTransitions = transitions?.transitions || [];
-  const docs = documents?.data || [];
+
   const history = historique?.data || [];
 
   const getStatutColor = (statut) => {
@@ -213,22 +207,7 @@ export default function OrdreDetail() {
 
           {/* Documents */}
           <Paper sx={{ p: 3, mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              Documents joints
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            {docs.length > 0 ? (
-              docs.map((doc) => (
-                <Box key={doc.id} sx={{ mb: 2 }}>
-                  <Typography variant="body1">{doc.titre}</Typography>
-                  <Typography variant="caption" color="textSecondary">
-                    {doc.nom_fichier}
-                  </Typography>
-                </Box>
-              ))
-            ) : (
-              <Typography color="textSecondary">Aucun document</Typography>
-            )}
+            <DocumentUpload objetType="ordre_travail" objetId={id} />
           </Paper>
         </Grid>
 

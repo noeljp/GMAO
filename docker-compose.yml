@@ -47,6 +47,8 @@ services:
     environment:
       # frontend runs on port 3000 inside the container (react-scripts default)
       - REACT_APP_API_URL=http://backend:5000
+      # Configure WebSocket pour utiliser le port 3010 (port exposé sur l'hôte)
+      - WDS_SOCKET_PORT=3010
     ports:
       # map host 3010 -> container 3000
       - "3010:3000"

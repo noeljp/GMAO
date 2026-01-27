@@ -31,6 +31,7 @@ import {
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import CompteursActif from '../components/CompteursActif';
+import DocumentUpload from '../components/DocumentUpload';
 
 export default function ActifDetail() {
   const { id } = useParams();
@@ -41,21 +42,34 @@ export default function ActifDetail() {
   const { data: actif, isLoading } = useQuery(['actif', id], async () => {
     const response = await axios.get(`/api/actifs/${id}`);
     return response.data;
+  }, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const { data: ordresTravail } = useQuery(['actif-ordres', id], async () => {
     const response = await axios.get(`/api/ordres-travail?actif_id=${id}`);
     return response.data;
+  }, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const { data: documents } = useQuery(['actif-documents', id], async () => {
-    const response = await axios.get(`/api/documents?entity_type=actif&entity_id=${id}`);
+    const response = await axios.get(`/api/documents?objet_type=actif&objet_id=${id}`);
     return response.data;
+  }, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   const { data: historique } = useQuery(['actif-historique', id], async () => {
     const response = await axios.get(`/api/actifs/${id}/historique`);
     return response.data;
+  }, {
+    enabled: false, // Route pas encore implémentée - 404
+    retry: false,
+    refetchOnWindowFocus: false
   });
 
   if (isLoading) return <CircularProgress />;
@@ -213,30 +227,7 @@ export default function ActifDetail() {
         {/* Documents */}
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h6">
-                <DescriptionIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Documents
-              </Typography>
-              <Button size="small" onClick={() => navigate('/documents')}>
-                Voir tout
-              </Button>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-            {docs.slice(0, 5).map((doc) => (
-              <Box
-                key={doc.id}
-                sx={{ mb: 2, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}
-              >
-                <Typography variant="body1">{doc.titre}</Typography>
-                <Typography variant="caption" color="textSecondary">
-                  {doc.nom_fichier} • {doc.created_at && format(new Date(doc.created_at), 'dd/MM/yyyy', { locale: fr })}
-                </Typography>
-              </Box>
-            ))}
-            {docs.length === 0 && (
-              <Typography color="textSecondary">Aucun document</Typography>
-            )}
+            <DocumentUpload objetType="actif" objetId={id} />
           </Paper>
         </Grid>
       </Grid>

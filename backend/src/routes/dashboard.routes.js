@@ -16,13 +16,14 @@ router.get('/stats', authenticate, asyncHandler(async (req, res) => {
     // Total actifs par statut
     pool.query(`
       SELECT 
-        ast.nom as statut,
-        ast.couleur,
+        COALESCE(ast.nom, 'Non défini') as statut,
+        COALESCE(ast.couleur, '#6c757d') as couleur,
         COUNT(a.id) as count
-      FROM actifs_statuts ast
-      LEFT JOIN actifs a ON ast.id = a.statut_id AND a.is_active = true
+      FROM actifs a
+      LEFT JOIN actifs_statuts ast ON ast.id = a.statut_id
+      WHERE a.is_active = true
       GROUP BY ast.id, ast.nom, ast.couleur, ast.ordre
-      ORDER BY ast.ordre
+      ORDER BY COALESCE(ast.ordre, 999)
     `),
     
     // OT par statut

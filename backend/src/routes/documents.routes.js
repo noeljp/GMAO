@@ -226,9 +226,26 @@ router.get('/',
       query += ` AND d.type = $${params.length}`;
     }
 
-    const countQuery = query.replace(/SELECT.*FROM/, 'SELECT COUNT(DISTINCT d.id) FROM');
-    const countResult = await pool.query(countQuery, params);
-    const total = parseInt(countResult.rows[0].count);
+    // Requête COUNT séparée plus simple
+    let countQuery = `
+      SELECT COUNT(DISTINCT d.id) as count
+      FROM documents d
+      LEFT JOIN documents_liaisons dl ON d.id = dl.document_id
+      WHERE d.is_active = true
+    `;
+    
+    const countParams = [];
+    if (objet_type && objet_id) {
+      countParams.push(objet_type, objet_id);
+      countQuery += ` AND dl.objet_type = $1 AND dl.objet_id = $2`;
+    }
+    if (type) {
+      countParams.push(type);
+      countQuery += ` AND d.type = $${countParams.length}`;
+    }
+    
+    const countResult = await pool.query(countQuery, countParams);
+    const total = parseInt(countResult.rows[0]?.count || 0);
 
     params.push(limit, offset);
     query += ` ORDER BY d.created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`;

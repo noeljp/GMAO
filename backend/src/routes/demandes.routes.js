@@ -101,6 +101,118 @@ router.patch('/:id/transition',
   })
 );
 
+// Update demande (modification des informations)
+router.patch('/:id', authenticate, [
+  body('titre').optional().trim().notEmpty().withMessage('Titre ne peut pas être vide'),
+  body('actif_id').optional().notEmpty().withMessage('Actif requis si fourni')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { titre, description, actif_id, priorite, type } = req.body;
+    
+    // Construire dynamiquement la requête UPDATE
+    const updates = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (titre !== undefined) {
+      updates.push(`titre = $${paramIndex++}`);
+      values.push(titre);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramIndex++}`);
+      values.push(description);
+    }
+    if (actif_id !== undefined) {
+      updates.push(`actif_id = $${paramIndex++}`);
+      values.push(actif_id);
+    }
+    if (priorite !== undefined) {
+      updates.push(`priorite = $${paramIndex++}`);
+      values.push(priorite);
+    }
+    if (type !== undefined) {
+      updates.push(`type = $${paramIndex++}`);
+      values.push(type);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'Aucune donnée à mettre à jour' });
+    }
+
+    updates.push(`updated_at = NOW()`);
+    values.push(req.params.id);
+
+    const query = `
+      UPDATE demandes_intervention 
+      SET ${updates.join(', ')}
+      WHERE id = $${paramIndex} AND is_active = true
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, values);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Demande non trouvée' });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating demande:', error);
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de la demande' });
+  }
+});
+
+// Get demande by ID (doit être après les routes spécifiques)
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT d.*,
+             u.prenom || ' ' || u.nom as demandeur_nom,
+             a.code_interne as actif_code
+      FROM demandes_intervention d
+      LEFT JOIN utilisateurs u ON d.demandeur_id = u.id
+      LEFT JOIN actifs a ON d.actif_id = a.id
+      WHERE d.id = $1 AND d.is_active = true
+    `, [req.params.id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Demande non trouvée' });
+    }
+    
+    res.json({ data: result.rows[0] });
+  } catch (error) {
+    console.error('Error fetching demande:', error);
+    res.status(500).json({ error: 'Erreur lors de la récupération de la demande' });
+  }
+});
+
+// Delete demande (soft delete)
+router.delete('/:id', authenticate, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE demandes_intervention 
+       SET is_active = false, updated_at = NOW()
+       WHERE id = $1 AND is_active = true
+       RETURNING id`,
+      [req.params.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Demande non trouvée' });
+    }
+    
+    res.json({ message: 'Demande supprimée avec succès' });
+  } catch (error) {
+    console.error('Error deleting demande:', error);
+    res.status(500).json({ error: 'Erreur lors de la suppression de la demande' });
+  }
+});
+
 // Obtenir les transitions disponibles
 router.get('/:id/transitions', 
   authenticate,

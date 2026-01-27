@@ -52,8 +52,10 @@ export default function OrdresTravail() {
     actif_id: '',
     type: 'correctif',
     priorite: 'moyenne',
-    technicien_assigne_id: '',
-    date_prevue: '',
+    technicien_id: '',
+    date_prevue_debut: '',
+    date_prevue_fin: '',
+    duree_estimee: 120, // 2 heures par défaut
   });
   const [error, setError] = useState('');
 
@@ -116,8 +118,10 @@ export default function OrdresTravail() {
         actif_id: ordre.actif_id || '',
         type: ordre.type || 'correctif',
         priorite: ordre.priorite || 'moyenne',
-        technicien_assigne_id: ordre.technicien_assigne_id || '',
-        date_prevue: ordre.date_prevue ? ordre.date_prevue.split('T')[0] : '',
+        technicien_id: ordre.technicien_id || '',
+        date_prevue_debut: ordre.date_prevue_debut ? ordre.date_prevue_debut.split('T')[0] : '',
+        date_prevue_fin: ordre.date_prevue_fin ? ordre.date_prevue_fin.split('T')[0] : '',
+        duree_estimee: ordre.duree_estimee || 120,
       });
     } else {
       setEditOrdre(null);
@@ -127,8 +131,10 @@ export default function OrdresTravail() {
         actif_id: '',
         type: 'correctif',
         priorite: 'moyenne',
-        technicien_assigne_id: '',
-        date_prevue: '',
+        technicien_id: '',
+        date_prevue_debut: '',
+        date_prevue_fin: '',
+        duree_estimee: 120,
       });
     }
     setError('');
@@ -324,12 +330,12 @@ export default function OrdresTravail() {
               fullWidth
               select
               label="Technicien assigné"
-              value={formData.technicien_assigne_id}
-              onChange={(e) => setFormData({ ...formData, technicien_assigne_id: e.target.value })}
+              value={formData.technicien_id}
+              onChange={(e) => setFormData({ ...formData, technicien_id: e.target.value })}
               SelectProps={{ native: true }}
               margin="normal"
             >
-              <option value="">Aucun</option>
+              <option value="">À attribuer</option>
               {users.map((user) => (
                 <option key={user.id} value={user.id}>
                   {user.prenom} {user.nom}
@@ -338,12 +344,31 @@ export default function OrdresTravail() {
             </TextField>
             <TextField
               fullWidth
-              label="Date prévue"
+              label="Date de début prévue"
               type="date"
-              value={formData.date_prevue}
-              onChange={(e) => setFormData({ ...formData, date_prevue: e.target.value })}
+              value={formData.date_prevue_debut}
+              onChange={(e) => setFormData({ ...formData, date_prevue_debut: e.target.value })}
               InputLabelProps={{ shrink: true }}
               margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Date de fin prévue"
+              type="date"
+              value={formData.date_prevue_fin}
+              onChange={(e) => setFormData({ ...formData, date_prevue_fin: e.target.value })}
+              InputLabelProps={{ shrink: true }}
+              margin="normal"
+            />
+            <TextField
+              fullWidth
+              label="Durée estimée (minutes)"
+              type="number"
+              value={formData.duree_estimee}
+              onChange={(e) => setFormData({ ...formData, duree_estimee: parseInt(e.target.value) })}
+              InputLabelProps={{ shrink: true }}
+              margin="normal"
+              inputProps={{ min: 15, step: 15 }}
             />
           </DialogContent>
           <DialogActions>

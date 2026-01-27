@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Sites from './pages/Sites';
 import Actifs from './pages/Actifs';
 import ActifDetail from './pages/ActifDetail';
+import TypesActifs from './pages/TypesActifs';
 import OrdresTravail from './pages/OrdresTravail';
 import OrdreDetail from './pages/OrdreDetail';
 import Demandes from './pages/Demandes';
@@ -20,6 +21,7 @@ import Notifications from './pages/Notifications';
 import PlanificationEnhanced from './pages/PlanificationEnhanced';
 import Rapports from './pages/Rapports';
 import ConfigurationMQTT from './pages/ConfigurationMQTT';
+import TemplatesMaintenance from './pages/TemplatesMaintenance';
 import { useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
@@ -66,6 +68,7 @@ function App() {
                     <Route path="/sites" element={<Sites />} />
                     <Route path="/actifs" element={<Actifs />} />
                     <Route path="/actifs/:id" element={<ActifDetail />} />
+                    <Route path="/types-actifs" element={<TypesActifs />} />
                     <Route path="/ordres-travail" element={<OrdresTravail />} />
                     <Route path="/ordres-travail/:id" element={<OrdreDetail />} />
                     <Route path="/demandes" element={<Demandes />} />
@@ -76,6 +79,7 @@ function App() {
                     <Route path="/notifications" element={<Notifications />} />
                     <Route path="/planification" element={<PlanificationEnhanced />} />
                     <Route path="/rapports" element={<Rapports />} />
+                    <Route path="/templates-maintenance" element={<TemplatesMaintenance />} />
                     <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
                   </Routes>
                 </Layout>

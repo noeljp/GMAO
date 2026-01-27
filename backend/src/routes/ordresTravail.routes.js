@@ -21,13 +21,13 @@ router.get('/', authenticate, async (req, res) => {
     let paramIndex = 1;
     
     if (date_debut_min) {
-      whereConditions.push(`(ot.date_prevue >= $${paramIndex} OR ot.date_prevue_debut >= $${paramIndex})`);
+      whereConditions.push(`ot.date_prevue_debut >= $${paramIndex}`);
       queryParams.push(date_debut_min);
       paramIndex++;
     }
     
     if (date_fin_max) {
-      whereConditions.push(`(ot.date_prevue <= $${paramIndex} OR ot.date_prevue_fin <= $${paramIndex})`);
+      whereConditions.push(`ot.date_prevue_fin <= $${paramIndex}`);
       queryParams.push(date_fin_max);
       paramIndex++;
     }
@@ -63,7 +63,7 @@ router.get('/', authenticate, async (req, res) => {
              a.code_interne as actif_code,
              a.description as actif_nom,
              u.prenom || ' ' || u.nom as technicien_nom,
-             COALESCE(ot.date_prevue, ot.date_prevue_debut) as date_prevue_display
+             ot.date_prevue_debut as date_prevue_display
       FROM ordres_travail ot
       LEFT JOIN actifs a ON ot.actif_id = a.id
       LEFT JOIN utilisateurs u ON ot.technicien_id = u.id
@@ -79,7 +79,7 @@ router.get('/', authenticate, async (req, res) => {
     }
     
     query += ` WHERE ${whereConditions.join(' AND ')}
-      ORDER BY COALESCE(ot.date_prevue, ot.date_prevue_debut, ot.created_at) DESC
+      ORDER BY COALESCE(ot.date_prevue_debut, ot.created_at) DESC
       LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
     `;
     
@@ -120,12 +120,12 @@ router.post('/', authenticate, [
 
     const { 
       titre, description, actif_id, type, priorite, technicien_id,
-      date_prevue, date_prevue_debut, date_prevue_fin,
-      duree_estimee, couleur, resources 
+      date_prevue_debut, date_prevue_fin,
+      duree_estimee, resources 
     } = req.body;
     
     // Calculate date_prevue_fin if not provided but duree_estimee is
-    let finalDateDebut = date_prevue_debut || date_prevue;
+    let finalDateDebut = date_prevue_debut;
     let finalDateFin = date_prevue_fin;
     
     if (finalDateDebut && duree_estimee && !finalDateFin) {
@@ -136,14 +136,14 @@ router.post('/', authenticate, [
     const result = await client.query(
       `INSERT INTO ordres_travail (
         titre, description, actif_id, type, priorite, technicien_id,
-        date_prevue, date_prevue_debut, date_prevue_fin,
-        duree_estimee, couleur, statut, created_by, created_at, updated_at
+        date_prevue_debut, date_prevue_fin,
+        duree_estimee, statut, created_by, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'en_attente', $12, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'en_attente', $10, NOW(), NOW())
       RETURNING *`,
       [titre, description, actif_id, type, priorite, technicien_id,
-       date_prevue, finalDateDebut, finalDateFin,
-       duree_estimee, couleur, req.user.id]
+       finalDateDebut, finalDateFin,
+       duree_estimee, req.user.id]
     );
 
     const ordreId = result.rows[0].id;
@@ -310,7 +310,7 @@ router.post('/:id/resources',
     
     // Get order dates
     const orderResult = await pool.query(
-      'SELECT date_prevue_debut, date_prevue_fin, date_prevue FROM ordres_travail WHERE id = $1',
+      'SELECT date_prevue_debut, date_prevue_fin FROM ordres_travail WHERE id = $1',
       [req.params.id]
     );
     
@@ -319,7 +319,7 @@ router.post('/:id/resources',
     }
     
     const order = orderResult.rows[0];
-    const dateDebut = order.date_prevue_debut || order.date_prevue;
+    const dateDebut = order.date_prevue_debut;
     const dateFin = order.date_prevue_fin;
     
     if (!dateDebut || !dateFin) {
@@ -389,7 +389,6 @@ router.patch('/:id/schedule',
       `UPDATE ordres_travail 
        SET date_prevue_debut = COALESCE($1, date_prevue_debut),
            date_prevue_fin = COALESCE($2, date_prevue_fin),
-           date_prevue = COALESCE($1, date_prevue_debut, date_prevue),
            updated_at = NOW(),
            updated_by = $3
        WHERE id = $4`,

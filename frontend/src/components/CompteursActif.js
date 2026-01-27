@@ -7,12 +7,6 @@ import {
   Paper,
   TextField,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Chip,
   Dialog,
   DialogTitle,
@@ -28,13 +22,12 @@ import {
   Card,
   CardContent,
   Divider,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
   Save as SaveIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
@@ -45,6 +38,7 @@ export default function CompteursActif({ actifId }) {
   const [openSaisie, setOpenSaisie] = useState(false);
   const [openSeuil, setOpenSeuil] = useState(false);
   const [selectedCompteur, setSelectedCompteur] = useState(null);
+  const [alerteSnackbar, setAlerteSnackbar] = useState({ open: false, alertes: [] });
   const [saisieForm, setSaisieForm] = useState({ valeur: '', commentaire: '' });
   const [seuilForm, setSeuilForm] = useState({
     champ_definition_id: '',
@@ -58,11 +52,17 @@ export default function CompteursActif({ actifId }) {
   });
 
   // Queries
-  const { data: compteursData, isLoading } = useQuery(
+  const { data: compteursData, isLoading, error } = useQuery(
     ['compteurs', actifId],
     async () => {
       const res = await axios.get(`/api/compteurs/actif/${actifId}`);
       return res.data;
+    },
+    {
+      enabled: !!actifId,
+      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes - évite les re-fetch trop fréquents
+      refetchOnWindowFocus: false // Ne pas re-fetch au focus
     }
   );
 
@@ -72,12 +72,18 @@ export default function CompteursActif({ actifId }) {
       const res = await axios.get(`/api/compteurs/alertes?actif_id=${actifId}`);
       return res.data;
     },
-    { refetchInterval: 30000 } // Rafraîchir toutes les 30 secondes
+    { 
+      enabled: false, // Désactivé temporairement - table v_alertes_actives n'existe pas
+      retry: false
+    }
   );
 
   const { data: templatesData } = useQuery('templates', async () => {
     const res = await axios.get('/api/compteurs/templates');
     return res.data;
+  }, {
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false
   });
 
   // Mutations
@@ -92,7 +98,10 @@ export default function CompteursActif({ actifId }) {
         
         // Afficher les alertes déclenchées
         if (response.data.alertes_declenchees?.length > 0) {
-          alert(`${response.data.alertes_declenchees.length} alerte(s) déclenchée(s) !`);
+          setAlerteSnackbar({
+            open: true,
+            alertes: response.data.alertes_declenchees
+          });
         }
       },
     }
@@ -187,7 +196,13 @@ export default function CompteursActif({ actifId }) {
     acquitterAlerteMutation.mutate({ id: alerteId, commentaire: commentaire || '' });
   };
 
-  if (isLoading) return <Typography>Chargement...</Typography>;
+  if (isLoading) {
+    return <Typography>Chargement...</Typography>;
+  }
+  if (error) {
+    console.error('❌ CompteursActif - Error:', error);
+    return <Alert severity="error">Erreur lors du chargement des compteurs: {error.message}</Alert>;
+  }
 
   const compteurs = compteursData?.data || [];
   const alertes = alertesData?.data || [];
@@ -231,7 +246,11 @@ export default function CompteursActif({ actifId }) {
       </Typography>
 
       {compteurs.length === 0 ? (
-        <Alert severity="info">Aucun compteur défini pour cet actif.</Alert>
+        <Alert severity="info">
+          Aucun compteur défini pour cet actif (type de cet actif).
+          <br />
+          Pour créer des compteurs, allez dans le menu "Types d'actifs" et ajoutez des champs de type "number" au type de cet actif.
+        </Alert>
       ) : (
         <Grid container spacing={3}>
           {compteurs.map((compteur) => (
@@ -276,39 +295,78 @@ export default function CompteursActif({ actifId }) {
                       <Box
                         key={seuil.id}
                         sx={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          p: 1,
-                          bgcolor: 'grey.50',
+                          mb: 2,
+                          p: 1.5,
+                          border: '1px solid',
+                          borderColor: 'divider',
                           borderRadius: 1,
-                          mb: 1,
+                          bgcolor: 'background.paper',
                         }}
                       >
-                        <Box>
-                          <Chip
-                            label={seuil.niveau_alerte}
-                            size="small"
-                            color={
-                              seuil.niveau_alerte === 'critical'
-                                ? 'error'
-                                : seuil.niveau_alerte === 'warning'
-                                ? 'warning'
-                                : 'info'
-                            }
-                            sx={{ mr: 1 }}
-                          />
-                          <Typography variant="body2" component="span">
-                            {seuil.type_seuil === 'superieur' && `> ${seuil.valeur_min}`}
-                            {seuil.type_seuil === 'inferieur' && `< ${seuil.valeur_min}`}
-                            {seuil.type_seuil === 'egal' && `= ${seuil.valeur_min}`}
-                            {seuil.type_seuil === 'entre' &&
-                              `entre ${seuil.valeur_min} et ${seuil.valeur_max}`}
-                          </Typography>
+                        {/* Première ligne: Niveau et Valeur + Bouton supprimer */}
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                            <Chip
+                              label={seuil.niveau_alerte}
+                              size="small"
+                              color={
+                                seuil.niveau_alerte === 'critical'
+                                  ? 'error'
+                                  : seuil.niveau_alerte === 'warning'
+                                  ? 'warning'
+                                  : 'info'
+                              }
+                            />
+                            <Typography variant="body2" component="span" fontWeight="medium">
+                              {seuil.type_seuil === 'superieur' && `> ${seuil.valeur_seuil_min}`}
+                              {seuil.type_seuil === 'inferieur' && `< ${seuil.valeur_seuil_min}`}
+                              {seuil.type_seuil === 'egal' && `= ${seuil.valeur_seuil_min}`}
+                              {seuil.type_seuil === 'entre' &&
+                                `entre ${seuil.valeur_seuil_min} et ${seuil.valeur_seuil_max}`}
+                            </Typography>
+                          </Box>
+                          <IconButton size="small" onClick={() => handleDeleteSeuil(seuil.id)}>
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
                         </Box>
-                        <IconButton size="small" onClick={() => handleDeleteSeuil(seuil.id)}>
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+
+                        {/* Action automatique */}
+                        {seuil.action_automatique && (
+                          <Box sx={{ mb: 0.5 }}>
+                            <Chip
+                              label={
+                                seuil.action_automatique === 'ordre_travail'
+                                  ? '🔧 Création OT automatique'
+                                  : seuil.action_automatique === 'notification'
+                                  ? '🔔 Notification uniquement'
+                                  : seuil.action_automatique === 'notification_et_ordre'
+                                  ? '🔔 + 🔧 Notification + Création OT'
+                                  : seuil.action_automatique
+                              }
+                              size="small"
+                              color={
+                                seuil.action_automatique.includes('ordre')
+                                  ? 'success'
+                                  : 'default'
+                              }
+                              variant="outlined"
+                            />
+                          </Box>
+                        )}
+
+                        {/* Template associé */}
+                        {seuil.template_maintenance_id && (
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                            📋 Template: {seuil.template_nom || seuil.template_maintenance_id}
+                          </Typography>
+                        )}
+
+                        {/* Message d'alerte */}
+                        {seuil.message_alerte && (
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            💬 {seuil.message_alerte}
+                          </Typography>
+                        )}
                       </Box>
                     ))
                   ) : (
@@ -465,9 +523,10 @@ export default function CompteursActif({ actifId }) {
               </FormControl>
             </Grid>
 
+            {/* Template de maintenance */}
             {(seuilForm.action_automatique === 'ordre_travail' ||
               seuilForm.action_automatique === 'notification_et_ordre') && (
-              <Grid item xs={6}>
+              <Grid item xs={12}>
                 <FormControl fullWidth margin="normal">
                   <InputLabel>Template de maintenance</InputLabel>
                   <Select
@@ -476,9 +535,12 @@ export default function CompteursActif({ actifId }) {
                       setSeuilForm({ ...seuilForm, template_maintenance_id: e.target.value })
                     }
                   >
+                    <MenuItem value="">
+                      <em>Aucun template</em>
+                    </MenuItem>
                     {templates.map((template) => (
                       <MenuItem key={template.id} value={template.id}>
-                        {template.nom}
+                        {template.nom} - {template.type_maintenance}
                       </MenuItem>
                     ))}
                   </Select>
@@ -498,6 +560,39 @@ export default function CompteursActif({ actifId }) {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar pour les alertes déclenchées */}
+      <Snackbar
+        open={alerteSnackbar.open}
+        autoHideDuration={8000}
+        onClose={() => setAlerteSnackbar({ open: false, alertes: [] })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          severity="warning" 
+          onClose={() => setAlerteSnackbar({ open: false, alertes: [] })}
+          sx={{ width: '100%', maxWidth: 500 }}
+        >
+          <Typography variant="subtitle2" gutterBottom>
+            🚨 {alerteSnackbar.alertes.length} Alerte(s) déclenchée(s)
+          </Typography>
+          {alerteSnackbar.alertes.map((alerte, index) => (
+            <Box key={index} sx={{ mt: 1, p: 1, bgcolor: 'background.paper', borderRadius: 1 }}>
+              <Typography variant="body2" fontWeight="medium">
+                {alerte.ordre_travail_titre}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Niveau: {alerte.niveau} | OT #{alerte.ordre_travail_id}
+              </Typography>
+              {alerte.message && (
+                <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+                  {alerte.message}
+                </Typography>
+              )}
+            </Box>
+          ))}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

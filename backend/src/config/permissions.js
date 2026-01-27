@@ -55,17 +55,23 @@ async function hasRole(userId, roleName) {
  */
 function requirePermission(permissionCode) {
   return async (req, res, next) => {
-    if (!req.user) {
-      throw new AppError('Non authentifié', 401);
-    }
+    try {
+      if (!req.user) {
+        throw new AppError('Non authentifié', 401);
+      }
 
-    const allowed = await hasPermission(req.user.id, permissionCode);
-    
-    if (!allowed) {
-      throw new AppError('Permission insuffisante', 403);
-    }
+      // Utiliser userId au lieu de id (le JWT contient userId)
+      const userId = req.user.userId || req.user.id;
+      const allowed = await hasPermission(userId, permissionCode);
+      
+      if (!allowed) {
+        throw new AppError('Permission insuffisante', 403);
+      }
 
-    next();
+      next();
+    } catch (error) {
+      next(error);
+    }
   };
 }
 

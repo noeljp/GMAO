@@ -10,16 +10,16 @@ const { errorHandler } = require('./middleware/error.middleware');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Rate limiting
+// Rate limiting (limites augmentées pour le développement)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limite de 100 requêtes par IP
+  max: 1000, // Limite de 1000 requêtes par IP (développement)
   message: 'Trop de requêtes, veuillez réessayer plus tard.'
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5, // 5 tentatives de connexion max
+  max: 20, // 20 tentatives de connexion max (développement)
   message: 'Trop de tentatives de connexion, veuillez réessayer plus tard.'
 });
 
@@ -36,6 +36,7 @@ app.use('/api/auth', authLimiter, require('./routes/auth.routes'));
 app.use('/api/users', require('./routes/users.routes'));
 app.use('/api/sites', require('./routes/sites.routes'));
 app.use('/api/actifs', require('./routes/actifs.routes'));
+app.use('/api/types-actifs', require('./routes/types-actifs.routes'));
 app.use('/api/ordres-travail', require('./routes/ordresTravail.routes'));
 app.use('/api/demandes', require('./routes/demandes.routes'));
 app.use('/api/dashboard', require('./routes/dashboard.routes'));
