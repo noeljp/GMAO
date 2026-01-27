@@ -23,11 +23,14 @@ import {
   TextField,
   Alert,
   InputAdornment,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -44,6 +47,7 @@ export default function Demandes() {
     actif_id: '',
     type: 'panne',
     priorite: 'moyenne',
+    is_confidential: false,
   });
   const [error, setError] = useState('');
 
@@ -101,6 +105,7 @@ export default function Demandes() {
         actif_id: demande.actif_id || '',
         type: demande.type || 'panne',
         priorite: demande.priorite || 'moyenne',
+        is_confidential: demande.is_confidential || false,
       });
     } else {
       setEditDemande(null);
@@ -110,6 +115,7 @@ export default function Demandes() {
         actif_id: '',
         type: 'panne',
         priorite: 'moyenne',
+        is_confidential: false,
       });
     }
     setError('');
@@ -165,6 +171,7 @@ export default function Demandes() {
               <TableCell>Type</TableCell>
               <TableCell>Priorité</TableCell>
               <TableCell>Statut</TableCell>
+              <TableCell>Confidentialité</TableCell>
               <TableCell>Créée le</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
@@ -172,7 +179,7 @@ export default function Demandes() {
           <TableBody>
             {demandes.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={8} align="center">
+                <TableCell colSpan={9} align="center">
                   Aucune demande disponible. Cliquez sur "Nouvelle demande" pour commencer.
                 </TableCell>
               </TableRow>
@@ -190,6 +197,16 @@ export default function Demandes() {
                   <TableCell>{demande.priorite}</TableCell>
                   <TableCell>
                     <Chip label={demande.statut} size="small" color="warning" />
+                  </TableCell>
+                  <TableCell>
+                    {demande.is_confidential && (
+                      <Chip 
+                        icon={<LockIcon />} 
+                        label="Confidentiel" 
+                        size="small" 
+                        color="warning" 
+                      />
+                    )}
                   </TableCell>
                   <TableCell>
                     {demande.created_at && format(new Date(demande.created_at), 'dd/MM/yyyy', { locale: fr })}
@@ -305,6 +322,16 @@ export default function Demandes() {
               <option value="haute">Haute</option>
               <option value="urgente">Urgente</option>
             </TextField>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.is_confidential}
+                  onChange={(e) => setFormData({ ...formData, is_confidential: e.target.checked })}
+                  color="warning"
+                />
+              }
+              label="Confidentiel (visible uniquement par moi)"
+            />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleClose}>Annuler</Button>
