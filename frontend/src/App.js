@@ -22,6 +22,7 @@ import PlanificationEnhanced from './pages/PlanificationEnhanced';
 import Rapports from './pages/Rapports';
 import ConfigurationMQTT from './pages/ConfigurationMQTT';
 import TemplatesMaintenance from './pages/TemplatesMaintenance';
+import Pieces from './pages/Pieces';
 import { useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
 
@@ -80,6 +81,7 @@ function App() {
                     <Route path="/planification" element={<PlanificationEnhanced />} />
                     <Route path="/rapports" element={<Rapports />} />
                     <Route path="/templates-maintenance" element={<TemplatesMaintenance />} />
+                    <Route path="/pieces" element={<Pieces />} />
                     <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
                   </Routes>
                 </Layout>
