@@ -16,9 +16,9 @@ router.get('/', authenticate, async (req, res) => {
     // Support filtering by date range, type, priority, resource
     const { date_debut_min, date_fin_max, type, priorite, resource_id, statut } = req.query;
 
-    let whereConditions = ['ot.is_active = true'];
-    let queryParams = [];
-    let paramIndex = 1;
+    let whereConditions = ['ot.is_active = true', '(ot.is_confidential = false OR ot.created_by = $1)'];
+    let queryParams = [req.user.id];
+    let paramIndex = queryParams.length + 1;
     
     if (date_debut_min) {
       whereConditions.push(`ot.date_prevue_debut >= $${paramIndex}`);
@@ -121,7 +121,7 @@ router.post('/', authenticate, [
     const { 
       titre, description, actif_id, type, priorite, technicien_id,
       date_prevue_debut, date_prevue_fin,
-      duree_estimee, resources 
+      duree_estimee, resources, is_confidential 
     } = req.body;
     
     // Calculate date_prevue_fin if not provided but duree_estimee is
@@ -137,13 +137,13 @@ router.post('/', authenticate, [
       `INSERT INTO ordres_travail (
         titre, description, actif_id, type, priorite, technicien_id,
         date_prevue_debut, date_prevue_fin,
-        duree_estimee, statut, created_by, created_at, updated_at
+        duree_estimee, is_confidential, statut, created_by, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'en_attente', $10, NOW(), NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'en_attente', $11, NOW(), NOW())
       RETURNING *`,
       [titre, description, actif_id, type, priorite, technicien_id,
        finalDateDebut, finalDateFin,
-       duree_estimee, req.user.id]
+       duree_estimee, is_confidential || false, req.user.id]
     );
 
     const ordreId = result.rows[0].id;
@@ -473,8 +473,8 @@ router.get('/:id', authenticate, async (req, res) => {
       FROM ordres_travail ot
       LEFT JOIN actifs a ON ot.actif_id = a.id
       LEFT JOIN utilisateurs u ON ot.technicien_id = u.id
-      WHERE ot.id = $1
-    `, [req.params.id]);
+      WHERE ot.id = $1 AND (ot.is_confidential = false OR ot.created_by = $2)
+    `, [req.params.id, req.user.id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Ordre de travail non trouvé' });

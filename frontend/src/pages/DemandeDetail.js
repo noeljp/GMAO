@@ -25,6 +25,7 @@ import {
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
   Category as CategoryIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -120,6 +121,9 @@ export default function DemandeDetail() {
                 <Chip label={demande.priorite} color={getPriorityColor(demande.priorite)} />
               )}
               {demande.type && <Chip label={demande.type} />}
+              {demande.is_confidential && (
+                <Chip icon={<LockIcon />} label="Confidentiel" color="warning" />
+              )}
             </Box>
 
             <Typography variant="h6" gutterBottom>

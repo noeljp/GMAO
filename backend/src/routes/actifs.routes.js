@@ -96,9 +96,9 @@ router.get('/:id/enfants',
        FROM actifs a
        LEFT JOIN actifs_types at ON a.type_id = at.id
        LEFT JOIN actifs_statuts ast ON a.statut_id = ast.id
-       WHERE a.parent_id = $1 AND a.is_active = true
+       WHERE a.parent_id = $1 AND a.is_active = true AND (a.is_confidential = false OR a.created_by = $2)
        ORDER BY a.niveau, a.code_interne`,
-      [req.params.id]
+      [req.params.id, req.user.id]
     );
     res.json({ data: result.rows });
   })
@@ -169,7 +169,7 @@ router.get('/',
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
 
-    let countQuery = 'SELECT COUNT(*) FROM actifs a WHERE a.is_active = true';
+    let countQuery = 'SELECT COUNT(*) FROM actifs a WHERE a.is_active = true AND (a.is_confidential = false OR a.created_by = $1)';
     let query = `
       SELECT a.*, 
              s.nom as site_nom,
@@ -186,9 +186,9 @@ router.get('/',
       LEFT JOIN actifs_criticites ac ON a.criticite_id = ac.id
       LEFT JOIN actifs_fabricants af ON a.fabricant_id = af.id
       LEFT JOIN actifs parent ON a.parent_id = parent.id
-      WHERE a.is_active = true
+      WHERE a.is_active = true AND (a.is_confidential = false OR a.created_by = $1)
     `;
-    const params = [];
+    const params = [req.user.id];
     
     if (site_id) {
       params.push(site_id);
@@ -257,8 +257,8 @@ router.get('/:id',
       LEFT JOIN actifs_criticites ac ON a.criticite_id = ac.id
       LEFT JOIN actifs_fabricants af ON a.fabricant_id = af.id
       LEFT JOIN actifs parent ON a.parent_id = parent.id
-      WHERE a.id = $1
-    `, [req.params.id]);
+      WHERE a.id = $1 AND (a.is_confidential = false OR a.created_by = $2)
+    `, [req.params.id, req.user.id]);
     
     if (actifResult.rows.length === 0) {
       throw new AppError('Actif non trouvé', 404);
@@ -310,7 +310,7 @@ router.post('/',
     const {
       code_interne, numero_serie, description, site_id, localisation_id,
       type_id, fabricant_id, statut_id, criticite_id, date_mise_en_service,
-      parent_id, champs_personnalises
+      parent_id, champs_personnalises, is_confidential
     } = req.body;
 
     const client = await pool.connect();
@@ -320,13 +320,14 @@ router.post('/',
       const result = await client.query(
         `INSERT INTO actifs 
          (code_interne, numero_serie, description, site_id, localisation_id, type_id, 
-          fabricant_id, statut_id, criticite_id, date_mise_en_service, parent_id, created_by, updated_by)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $12)
+          fabricant_id, statut_id, criticite_id, date_mise_en_service, parent_id, is_confidential, created_by, updated_by)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $13)
          RETURNING *`,
         [
           code_interne, numero_serie || null, description || null, site_id,
           localisation_id || null, type_id, fabricant_id || null, statut_id || null,
-          criticite_id || null, date_mise_en_service || null, parent_id || null, req.user.id
+          criticite_id || null, date_mise_en_service || null, parent_id || null, 
+          is_confidential || false, req.user.id
         ]
       );
 
@@ -390,10 +391,10 @@ router.patch('/:id',
     const {
       code_interne, numero_serie, description, site_id, localisation_id,
       type_id, fabricant_id, statut_id, criticite_id, date_mise_en_service,
-      parent_id, champs_personnalises
+      parent_id, champs_personnalises, is_confidential
     } = req.body;
 
-    const checkResult = await pool.query('SELECT * FROM actifs WHERE id = $1', [actifId]);
+    const checkResult = await pool.query('SELECT * FROM actifs WHERE id = $1 AND (is_confidential = false OR created_by = $2)', [actifId, req.user.id]);
     if (checkResult.rows.length === 0) {
       throw new AppError('Actif non trouvé', 404);
     }
@@ -417,14 +418,15 @@ router.patch('/:id',
           criticite_id = COALESCE($9, criticite_id),
           date_mise_en_service = COALESCE($10, date_mise_en_service),
           parent_id = COALESCE($11, parent_id),
-          updated_by = $12,
+          is_confidential = COALESCE($12, is_confidential),
+          updated_by = $13,
           updated_at = NOW()
-         WHERE id = $13
+         WHERE id = $14
          RETURNING *`,
         [
           code_interne, numero_serie, description, site_id, localisation_id,
           type_id, fabricant_id, statut_id, criticite_id, date_mise_en_service,
-          parent_id, req.user.id, actifId
+          parent_id, is_confidential, req.user.id, actifId
         ]
       );
 
@@ -486,7 +488,7 @@ router.delete('/:id',
   requirePermission('actifs.delete'),
   asyncHandler(async (req, res) => {
     const result = await pool.query(
-      'UPDATE actifs SET is_active = false, updated_by = $1, updated_at = NOW() WHERE id = $2 RETURNING *',
+      'UPDATE actifs SET is_active = false, updated_by = $1, updated_at = NOW() WHERE id = $2 AND (is_confidential = false OR created_by = $1) RETURNING *',
       [req.user.id, req.params.id]
     );
     

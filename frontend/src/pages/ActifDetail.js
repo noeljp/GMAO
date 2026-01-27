@@ -27,6 +27,7 @@ import {
   History as HistoryIcon,
   Description as DescriptionIcon,
   Speed as SpeedIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -132,6 +133,14 @@ export default function ActifDetail() {
                     <Chip label={actif.statut_nom} size="small" color="primary" />
                   </TableCell>
                 </TableRow>
+                {actif.is_confidential && (
+                  <TableRow>
+                    <TableCell><strong>Confidentialité</strong></TableCell>
+                    <TableCell>
+                      <Chip icon={<LockIcon />} label="Confidentiel" size="small" color="warning" />
+                    </TableCell>
+                  </TableRow>
+                )}
                 {actif.criticite_nom && (
                   <TableRow>
                     <TableCell><strong>Criticité</strong></TableCell>

@@ -22,11 +22,14 @@ import {
   DialogActions,
   TextField,
   Alert,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
+  Lock as LockIcon,
 } from '@mui/icons-material';
 
 export default function Actifs() {
@@ -41,6 +44,7 @@ export default function Actifs() {
     site_id: '',
     localisation: '',
     numero_serie: '',
+    is_confidential: false,
   });
   const [error, setError] = useState('');
 
@@ -104,6 +108,7 @@ export default function Actifs() {
         site_id: actif.site_id || '',
         localisation: actif.localisation || '',
         numero_serie: actif.numero_serie || '',
+        is_confidential: actif.is_confidential || false,
       });
     } else {
       setEditActif(null);
@@ -114,6 +119,7 @@ export default function Actifs() {
         site_id: '',
         localisation: '',
         numero_serie: '',
+        is_confidential: false,
       });
     }
     setError('');
@@ -169,13 +175,14 @@ export default function Actifs() {
               <TableCell>Type</TableCell>
               <TableCell>Site</TableCell>
               <TableCell>Statut</TableCell>
+              <TableCell>Confidentialité</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {actifs.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center">
+                <TableCell colSpan={7} align="center">
                   Aucun actif disponible. Cliquez sur "Nouvel actif" pour commencer.
                 </TableCell>
               </TableRow>
@@ -193,6 +200,16 @@ export default function Actifs() {
                   <TableCell>{actif.site_nom}</TableCell>
                   <TableCell>
                     <Chip label={actif.statut_nom} size="small" color="primary" />
+                  </TableCell>
+                  <TableCell>
+                    {actif.is_confidential && (
+                      <Chip 
+                        icon={<LockIcon />} 
+                        label="Confidentiel" 
+                        size="small" 
+                        color="warning" 
+                      />
+                    )}
                   </TableCell>
                   <TableCell align="right">
                     <IconButton
@@ -299,6 +316,16 @@ export default function Actifs() {
               value={formData.numero_serie}
               onChange={(e) => setFormData({ ...formData, numero_serie: e.target.value })}
               margin="normal"
+            />
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.is_confidential}
+                  onChange={(e) => setFormData({ ...formData, is_confidential: e.target.checked })}
+                  color="warning"
+                />
+              }
+              label="Confidentiel (visible uniquement par moi)"
             />
           </DialogContent>
           <DialogActions>
