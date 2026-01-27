@@ -22,7 +22,7 @@ router.post('/upload',
       throw new AppError('Aucun fichier fourni', 400);
     }
 
-    const { titre, type, description, objet_type, objet_id } = req.body;
+    const { titre, type, description, objet_type, objet_id, is_confidential } = req.body;
 
     if (!titre || !type) {
       // Supprimer le fichier uploadé si validation échoue
@@ -32,8 +32,8 @@ router.post('/upload',
 
     // Insérer le document
     const result = await pool.query(
-      `INSERT INTO documents (titre, nom_fichier, chemin, type_mime, taille, type, description, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO documents (titre, nom_fichier, chemin, type_mime, taille, type, description, is_confidential, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         titre,
@@ -43,6 +43,7 @@ router.post('/upload',
         req.file.size,
         type,
         description || null,
+        is_confidential || false,
         req.user.id
       ]
     );
@@ -90,7 +91,7 @@ router.post('/',
       throw new AppError('Aucun fichier fourni', 400);
     }
 
-    const { titre, type, description, objet_type, objet_id } = req.body;
+    const { titre, type, description, objet_type, objet_id, is_confidential } = req.body;
 
     if (!titre || !type) {
       fs.unlinkSync(req.file.path);
@@ -98,8 +99,8 @@ router.post('/',
     }
 
     const result = await pool.query(
-      `INSERT INTO documents (titre, nom_fichier, chemin, type_mime, taille, type, description, uploaded_by)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO documents (titre, nom_fichier, chemin, type_mime, taille, type, description, is_confidential, uploaded_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         titre,
@@ -109,6 +110,7 @@ router.post('/',
         req.file.size,
         type,
         description || null,
+        is_confidential || false,
         req.user.id
       ]
     );
@@ -212,9 +214,9 @@ router.get('/',
       FROM documents d
       LEFT JOIN utilisateurs u ON d.uploaded_by = u.id
       LEFT JOIN documents_liaisons dl ON d.id = dl.document_id
-      WHERE d.is_active = true
+      WHERE d.is_active = true AND (d.is_confidential = false OR d.uploaded_by = $1)
     `;
-    const params = [];
+    const params = [req.user.id];
 
     if (objet_type && objet_id) {
       params.push(objet_type, objet_id);
@@ -231,13 +233,13 @@ router.get('/',
       SELECT COUNT(DISTINCT d.id) as count
       FROM documents d
       LEFT JOIN documents_liaisons dl ON d.id = dl.document_id
-      WHERE d.is_active = true
+      WHERE d.is_active = true AND (d.is_confidential = false OR d.uploaded_by = $1)
     `;
     
-    const countParams = [];
+    const countParams = [req.user.id];
     if (objet_type && objet_id) {
       countParams.push(objet_type, objet_id);
-      countQuery += ` AND dl.objet_type = $1 AND dl.objet_id = $2`;
+      countQuery += ` AND dl.objet_type = $${countParams.length} AND dl.objet_id = $${countParams.length + 1}`;
     }
     if (type) {
       countParams.push(type);
@@ -270,8 +272,8 @@ router.get('/:id/download',
   requirePermission('documents.read'),
   asyncHandler(async (req, res) => {
     const result = await pool.query(
-      'SELECT * FROM documents WHERE id = $1 AND is_active = true',
-      [req.params.id]
+      'SELECT * FROM documents WHERE id = $1 AND is_active = true AND (is_confidential = false OR uploaded_by = $2)',
+      [req.params.id, req.user.id]
     );
 
     if (result.rows.length === 0) {
@@ -294,8 +296,8 @@ router.delete('/:id',
   requirePermission('documents.delete'),
   asyncHandler(async (req, res) => {
     const result = await pool.query(
-      'SELECT * FROM documents WHERE id = $1',
-      [req.params.id]
+      'SELECT * FROM documents WHERE id = $1 AND (is_confidential = false OR uploaded_by = $2)',
+      [req.params.id, req.user.id]
     );
 
     if (result.rows.length === 0) {

@@ -13,7 +13,10 @@ router.get('/', authenticate, async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const offset = (page - 1) * limit;
 
-    const countResult = await pool.query('SELECT COUNT(*) FROM demandes_intervention WHERE is_active = true');
+    const countResult = await pool.query(
+      'SELECT COUNT(*) FROM demandes_intervention WHERE is_active = true AND (is_confidential = false OR demandeur_id = $1)',
+      [req.user.id]
+    );
     const total = parseInt(countResult.rows[0].count);
 
     const result = await pool.query(`
@@ -23,10 +26,10 @@ router.get('/', authenticate, async (req, res) => {
       FROM demandes_intervention d
       LEFT JOIN utilisateurs u ON d.demandeur_id = u.id
       LEFT JOIN actifs a ON d.actif_id = a.id
-      WHERE d.is_active = true
+      WHERE d.is_active = true AND (d.is_confidential = false OR d.demandeur_id = $1)
       ORDER BY d.created_at DESC
-      LIMIT $1 OFFSET $2
-    `, [limit, offset]);
+      LIMIT $2 OFFSET $3
+    `, [req.user.id, limit, offset]);
 
     res.json({
       data: result.rows,
@@ -54,12 +57,12 @@ router.post('/', authenticate, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { titre, description, actif_id, priorite, type } = req.body;
+    const { titre, description, actif_id, priorite, type, is_confidential } = req.body;
     const result = await pool.query(
-      `INSERT INTO demandes_intervention (titre, description, actif_id, priorite, type, demandeur_id, statut, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, 'soumise', NOW(), NOW())
+      `INSERT INTO demandes_intervention (titre, description, actif_id, priorite, type, demandeur_id, is_confidential, statut, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'soumise', NOW(), NOW())
        RETURNING *`,
-      [titre, description, actif_id, priorite, type, req.user.id]
+      [titre, description, actif_id, priorite, type, req.user.id, is_confidential || false]
     );
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -112,7 +115,7 @@ router.patch('/:id', authenticate, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { titre, description, actif_id, priorite, type } = req.body;
+    const { titre, description, actif_id, priorite, type, is_confidential } = req.body;
     
     // Construire dynamiquement la requête UPDATE
     const updates = [];
@@ -139,18 +142,23 @@ router.patch('/:id', authenticate, [
       updates.push(`type = $${paramIndex++}`);
       values.push(type);
     }
+    if (is_confidential !== undefined) {
+      updates.push(`is_confidential = $${paramIndex++}`);
+      values.push(is_confidential);
+    }
 
     if (updates.length === 0) {
       return res.status(400).json({ error: 'Aucune donnée à mettre à jour' });
     }
 
     updates.push(`updated_at = NOW()`);
+    values.push(req.user.id);
     values.push(req.params.id);
 
     const query = `
       UPDATE demandes_intervention 
       SET ${updates.join(', ')}
-      WHERE id = $${paramIndex} AND is_active = true
+      WHERE id = $${paramIndex + 1} AND is_active = true AND (is_confidential = false OR demandeur_id = $${paramIndex})
       RETURNING *
     `;
 
@@ -177,8 +185,8 @@ router.get('/:id', authenticate, async (req, res) => {
       FROM demandes_intervention d
       LEFT JOIN utilisateurs u ON d.demandeur_id = u.id
       LEFT JOIN actifs a ON d.actif_id = a.id
-      WHERE d.id = $1 AND d.is_active = true
-    `, [req.params.id]);
+      WHERE d.id = $1 AND d.is_active = true AND (d.is_confidential = false OR d.demandeur_id = $2)
+    `, [req.params.id, req.user.id]);
     
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Demande non trouvée' });
@@ -197,9 +205,9 @@ router.delete('/:id', authenticate, async (req, res) => {
     const result = await pool.query(
       `UPDATE demandes_intervention 
        SET is_active = false, updated_at = NOW()
-       WHERE id = $1 AND is_active = true
+       WHERE id = $1 AND is_active = true AND (is_confidential = false OR demandeur_id = $2)
        RETURNING id`,
-      [req.params.id]
+      [req.params.id, req.user.id]
     );
     
     if (result.rows.length === 0) {
