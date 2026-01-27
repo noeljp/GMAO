@@ -19,21 +19,31 @@ import {
   ListItemSecondaryAction,
   IconButton,
   Typography,
+  Tooltip,
+  Chip,
 } from '@mui/material';
 import {
   CloudUpload as UploadIcon,
   Delete as DeleteIcon,
   Download as DownloadIcon,
+  Transcribe as TranscribeIcon,
+  AudioFile as AudioFileIcon,
+  CheckCircle as CheckCircleIcon,
+  Pending as PendingIcon,
+  Error as ErrorIcon,
 } from '@mui/icons-material';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import TranscriptionDialog from './TranscriptionDialog';
 
 export default function DocumentUpload({ objetType, objetId, onUploadComplete }) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState(null);
+  const [transcriptionDialogOpen, setTranscriptionDialogOpen] = useState(false);
+  const [selectedDocForTranscription, setSelectedDocForTranscription] = useState(null);
   const [formData, setFormData] = useState({
     titre: '',
     type: 'manuel',
@@ -150,6 +160,51 @@ export default function DocumentUpload({ objetType, objetId, onUploadComplete })
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
+  const handleTranscriptionRequest = (doc) => {
+    setSelectedDocForTranscription(doc);
+    setTranscriptionDialogOpen(true);
+  };
+
+  const handleTranscriptionRequested = () => {
+    queryClient.invalidateQueries(['documents', objetType, objetId]);
+    setTranscriptionDialogOpen(false);
+    setSelectedDocForTranscription(null);
+  };
+
+  const isAudioFile = (mimeType) => {
+    return mimeType && mimeType.startsWith('audio/');
+  };
+
+  const getTranscriptionStatusIcon = (doc) => {
+    if (!isAudioFile(doc.type_mime)) return null;
+    
+    if (doc.transcription_status === 'completed' || doc.has_transcript > 0) {
+      return (
+        <Tooltip title="Transcription terminée">
+          <CheckCircleIcon color="success" fontSize="small" sx={{ ml: 1 }} />
+        </Tooltip>
+      );
+    } else if (doc.transcription_status === 'processing') {
+      return (
+        <Tooltip title="Transcription en cours">
+          <PendingIcon color="info" fontSize="small" sx={{ ml: 1 }} />
+        </Tooltip>
+      );
+    } else if (doc.transcription_status === 'failed') {
+      return (
+        <Tooltip title="Transcription échouée">
+          <ErrorIcon color="error" fontSize="small" sx={{ ml: 1 }} />
+        </Tooltip>
+      );
+    } else {
+      return (
+        <Tooltip title="Cliquez sur l'icône de transcription pour transcrire">
+          <AudioFileIcon color="primary" fontSize="small" sx={{ ml: 1 }} />
+        </Tooltip>
+      );
+    }
+  };
+
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -180,7 +235,20 @@ export default function DocumentUpload({ objetType, objetId, onUploadComplete })
               }}
             >
               <ListItemText
-                primary={doc.titre}
+                primary={
+                  <Box display="flex" alignItems="center">
+                    {doc.titre}
+                    {getTranscriptionStatusIcon(doc)}
+                    {doc.source_audio_id && (
+                      <Chip 
+                        label="Transcription" 
+                        size="small" 
+                        color="info" 
+                        sx={{ ml: 1 }}
+                      />
+                    )}
+                  </Box>
+                }
                 secondary={
                   <>
                     {doc.nom_fichier} • {formatFileSize(doc.taille)}
@@ -197,6 +265,17 @@ export default function DocumentUpload({ objetType, objetId, onUploadComplete })
                 }
               />
               <ListItemSecondaryAction>
+                {isAudioFile(doc.type_mime) && !doc.transcription_status && (
+                  <Tooltip title="Transcrire ce fichier audio">
+                    <IconButton
+                      edge="end"
+                      onClick={() => handleTranscriptionRequest(doc)}
+                      sx={{ mr: 1 }}
+                    >
+                      <TranscribeIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
                 <IconButton
                   edge="end"
                   onClick={() => handleDownload(doc.id, doc.nom_fichier)}
@@ -304,6 +383,19 @@ export default function DocumentUpload({ objetType, objetId, onUploadComplete })
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Transcription Dialog */}
+      {selectedDocForTranscription && (
+        <TranscriptionDialog
+          open={transcriptionDialogOpen}
+          onClose={() => {
+            setTranscriptionDialogOpen(false);
+            setSelectedDocForTranscription(null);
+          }}
+          document={selectedDocForTranscription}
+          onTranscriptionRequested={handleTranscriptionRequested}
+        />
+      )}
     </Box>
   );
 }

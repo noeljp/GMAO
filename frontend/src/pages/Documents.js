@@ -21,20 +21,29 @@ import {
   TextField,
   Alert,
   Chip,
+  Tooltip,
 } from '@mui/material';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
   Download as DownloadIcon,
   CloudUpload as CloudUploadIcon,
+  Transcribe as TranscribeIcon,
+  AudioFile as AudioFileIcon,
+  CheckCircle as CheckCircleIcon,
+  Pending as PendingIcon,
+  Error as ErrorIcon,
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import TranscriptionDialog from '../components/TranscriptionDialog';
 
 export default function Documents() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [transcriptionDialogOpen, setTranscriptionDialogOpen] = useState(false);
+  const [selectedDocForTranscription, setSelectedDocForTranscription] = useState(null);
   const [formData, setFormData] = useState({
     titre: '',
     description: '',
@@ -140,6 +149,51 @@ export default function Documents() {
     }
   };
 
+  const handleTranscriptionRequest = (doc) => {
+    setSelectedDocForTranscription(doc);
+    setTranscriptionDialogOpen(true);
+  };
+
+  const handleTranscriptionRequested = () => {
+    queryClient.invalidateQueries('documents');
+    setTranscriptionDialogOpen(false);
+    setSelectedDocForTranscription(null);
+  };
+
+  const isAudioFile = (mimeType) => {
+    return mimeType && mimeType.startsWith('audio/');
+  };
+
+  const getTranscriptionStatusIcon = (doc) => {
+    if (!isAudioFile(doc.type_mime)) return null;
+    
+    if (doc.transcription_status === 'completed' || doc.has_transcript > 0) {
+      return (
+        <Tooltip title="Transcription terminée">
+          <CheckCircleIcon color="success" fontSize="small" />
+        </Tooltip>
+      );
+    } else if (doc.transcription_status === 'processing') {
+      return (
+        <Tooltip title="Transcription en cours">
+          <PendingIcon color="info" fontSize="small" />
+        </Tooltip>
+      );
+    } else if (doc.transcription_status === 'failed') {
+      return (
+        <Tooltip title="Transcription échouée">
+          <ErrorIcon color="error" fontSize="small" />
+        </Tooltip>
+      );
+    } else {
+      return (
+        <Tooltip title="Cliquez pour transcrire ce fichier audio">
+          <AudioFileIcon color="primary" fontSize="small" />
+        </Tooltip>
+      );
+    }
+  };
+
   if (isLoading) return <CircularProgress />;
 
   const documents = response?.data || [];
@@ -199,12 +253,25 @@ export default function Documents() {
               documents.map((doc) => (
                 <TableRow key={doc.id}>
                   <TableCell>
-                    <Typography variant="body2">{doc.titre}</Typography>
-                    {doc.description && (
-                      <Typography variant="caption" color="textSecondary">
-                        {doc.description}
-                      </Typography>
-                    )}
+                    <Box display="flex" alignItems="center" gap={1}>
+                      {getTranscriptionStatusIcon(doc)}
+                      <Box>
+                        <Typography variant="body2">{doc.titre}</Typography>
+                        {doc.description && (
+                          <Typography variant="caption" color="textSecondary">
+                            {doc.description}
+                          </Typography>
+                        )}
+                        {doc.source_audio_id && (
+                          <Chip 
+                            label="Transcription" 
+                            size="small" 
+                            color="info" 
+                            sx={{ mt: 0.5 }}
+                          />
+                        )}
+                      </Box>
+                    </Box>
                   </TableCell>
                   <TableCell>
                     <Chip label={doc.type} size="small" color={getTypeColor(doc.type)} />
@@ -215,6 +282,17 @@ export default function Documents() {
                     {doc.created_at && format(new Date(doc.created_at), 'dd/MM/yyyy', { locale: fr })}
                   </TableCell>
                   <TableCell align="right">
+                    {isAudioFile(doc.type_mime) && !doc.transcription_status && (
+                      <Tooltip title="Transcrire ce fichier audio">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleTranscriptionRequest(doc)}
+                          color="primary"
+                        >
+                          <TranscribeIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     <IconButton
                       size="small"
                       onClick={() => handleDownload(doc.id, doc.nom_fichier)}
@@ -301,6 +379,19 @@ export default function Documents() {
           </DialogActions>
         </form>
       </Dialog>
+
+      {/* Transcription Dialog */}
+      {selectedDocForTranscription && (
+        <TranscriptionDialog
+          open={transcriptionDialogOpen}
+          onClose={() => {
+            setTranscriptionDialogOpen(false);
+            setSelectedDocForTranscription(null);
+          }}
+          document={selectedDocForTranscription}
+          onTranscriptionRequested={handleTranscriptionRequested}
+        />
+      )}
     </Box>
   );
 }
