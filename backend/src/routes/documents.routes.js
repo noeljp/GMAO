@@ -239,7 +239,7 @@ router.get('/',
     const countParams = [req.user.id];
     if (objet_type && objet_id) {
       countParams.push(objet_type, objet_id);
-      countQuery += ` AND dl.objet_type = $${countParams.length} AND dl.objet_id = $${countParams.length + 1}`;
+      countQuery += ` AND dl.objet_type = $${countParams.length - 1} AND dl.objet_id = $${countParams.length}`;
     }
     if (type) {
       countParams.push(type);

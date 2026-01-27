@@ -18,7 +18,7 @@ router.get('/', authenticate, async (req, res) => {
 
     let whereConditions = ['ot.is_active = true', '(ot.is_confidential = false OR ot.created_by = $1)'];
     let queryParams = [req.user.id];
-    let paramIndex = 2;
+    let paramIndex = queryParams.length + 1;
     
     if (date_debut_min) {
       whereConditions.push(`ot.date_prevue_debut >= $${paramIndex}`);
