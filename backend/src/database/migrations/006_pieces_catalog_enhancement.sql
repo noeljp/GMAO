@@ -10,10 +10,11 @@ ALTER TABLE pieces ADD COLUMN IF NOT EXISTS seuil_minimum INT DEFAULT 0;
 ALTER TABLE pieces ADD COLUMN IF NOT EXISTS prix_indicatif DECIMAL(10,2);
 ALTER TABLE pieces ADD COLUMN IF NOT EXISTS remarques TEXT;
 
--- Renommer les colonnes existantes si nécessaire pour cohérence
--- stock_actuel -> quantite_stock (si pas déjà fait)
--- stock_min -> seuil_minimum (si pas déjà fait)
--- prix_unitaire -> prix_indicatif (garder les deux pour compatibilité)
+-- Note: We maintain both old and new field names for backward compatibility:
+-- - quantite_stock (new) and stock_actuel (old) 
+-- - seuil_minimum (new) and stock_min (old)
+-- - prix_indicatif (new) and prix_unitaire (old)
+-- This allows gradual migration of code using the old field names
 
 -- 2. Créer une table d'association entre pièces et actifs
 CREATE TABLE IF NOT EXISTS pieces_actifs (

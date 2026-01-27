@@ -7,6 +7,11 @@ const { requirePermission } = require('../config/permissions');
 const { asyncHandler, AppError } = require('../middleware/error.middleware');
 const { logAudit } = require('../config/audit');
 
+// Stock status calculation threshold
+// Stock is "attention" when between minimum and (minimum * WARNING_MULTIPLIER)
+// This value should match the threshold used in the pieces_avec_alertes view
+const STOCK_WARNING_MULTIPLIER = 1.5;
+
 // ==================== PIECES ====================
 
 // Get all pieces with pagination and filters
@@ -176,13 +181,18 @@ router.post('/',
     const finalSeuilMinimum = seuil_minimum !== undefined ? seuil_minimum : (stock_min || 0);
     const finalPrix = prix_indicatif !== undefined ? prix_indicatif : (prix_unitaire || null);
 
+    // Insert with both new and old field names for backward compatibility
+    // New fields: quantite_stock, seuil_minimum, prix_indicatif
+    // Old fields (same values): stock_actuel, stock_min, prix_unitaire
     const result = await pool.query(
       `INSERT INTO pieces (
         code, designation, reference_interne, reference_fabricant, 
-        fournisseur, site_internet_fournisseur, prix_indicatif, prix_unitaire,
-        unite, quantite_stock, stock_actuel, seuil_minimum, stock_min, remarques
+        fournisseur, site_internet_fournisseur, unite, remarques,
+        prix_indicatif, prix_unitaire,
+        quantite_stock, stock_actuel, 
+        seuil_minimum, stock_min
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8, $9, $9, $10, $10, $11)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $10, $11, $11)
       RETURNING *`,
       [
         code,
@@ -191,11 +201,11 @@ router.post('/',
         reference_fabricant || null,
         fournisseur || null,
         site_internet_fournisseur || null,
-        finalPrix,
         unite || null,
+        remarques || null,
+        finalPrix,
         finalQuantiteStock,
-        finalSeuilMinimum,
-        remarques || null
+        finalSeuilMinimum
       ]
     );
 
