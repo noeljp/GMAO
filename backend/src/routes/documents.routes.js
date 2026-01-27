@@ -210,7 +210,8 @@ router.get('/',
     let query = `
       SELECT d.*, 
              u.prenom || ' ' || u.nom as uploaded_by_nom,
-             dl.objet_type, dl.objet_id
+             dl.objet_type, dl.objet_id,
+             (SELECT COUNT(*) FROM documents WHERE source_audio_id = d.id AND is_active = true) as has_transcript
       FROM documents d
       LEFT JOIN utilisateurs u ON d.uploaded_by = u.id
       LEFT JOIN documents_liaisons dl ON d.id = dl.document_id
