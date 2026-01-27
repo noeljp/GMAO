@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import axios from 'axios';
+// Material-UI components - using selective imports for tree-shaking optimization
 import {
   Box,
   Typography,

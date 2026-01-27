@@ -213,3 +213,6 @@ CREATE TRIGGER trigger_update_iot_device_communication
     AFTER INSERT ON iot_device_values_history
     FOR EACH ROW
     EXECUTE FUNCTION update_iot_device_last_communication();
+
+-- Migration completed successfully
+-- IoT device management tables and default data are ready for use
