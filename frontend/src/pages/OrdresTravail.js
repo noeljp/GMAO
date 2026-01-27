@@ -22,6 +22,7 @@ import {
   DialogActions,
   TextField,
   Alert,
+  InputAdornment,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -30,6 +31,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import LLMReformulateButton from '../components/LLMReformulateButton';
 
 const getStatutColor = (statut) => {
   const colors = {
@@ -281,6 +283,21 @@ export default function OrdresTravail() {
               multiline
               rows={3}
               margin="normal"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <LLMReformulateButton
+                      description={formData.description}
+                      onReformulated={(reformulated) => 
+                        setFormData({ ...formData, description: reformulated })
+                      }
+                      actifId={formData.actif_id}
+                      typeIntervention={formData.type}
+                      priorite={formData.priorite}
+                    />
+                  </InputAdornment>
+                ),
+              }}
             />
             <TextField
               fullWidth
