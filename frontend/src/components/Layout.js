@@ -31,6 +31,7 @@ import {
   Category as CategoryIcon,
   Assignment as AssignmentIcon,
   Construction as ConstructionIcon,
+  Sensors as SensorsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import NotificationCenter from './NotificationCenter';
@@ -42,6 +43,7 @@ const menuItems = [
   { text: 'Sites', icon: <BusinessIcon />, path: '/sites' },
   { text: 'Actifs', icon: <InventoryIcon />, path: '/actifs' },
   { text: 'Types d\'actifs', icon: <CategoryIcon />, path: '/types-actifs' },
+  { text: 'Dispositifs IoT', icon: <SensorsIcon />, path: '/iot-devices' },
   { text: 'Pièces de Rechange', icon: <ConstructionIcon />, path: '/pieces' },
   { text: 'Ordres de travail', icon: <BuildIcon />, path: '/ordres-travail' },
   { text: 'Planification', icon: <CalendarIcon />, path: '/planification' },

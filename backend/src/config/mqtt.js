@@ -289,10 +289,119 @@ class MQTTService {
         }
       }
 
+      // Traiter aussi les dispositifs IoT
+      await this.processIoTDevices(topic, payloadJson);
+
       return updated;
     } catch (error) {
       logger.error('Error processing mappings:', error);
       return 0;
+    }
+  }
+
+  /**
+   * Traiter les dispositifs IoT pour un message MQTT
+   */
+  async processIoTDevices(topic, payloadJson) {
+    try {
+      // Trouver les dispositifs IoT qui correspondent au topic
+      const devicesResult = await pool.query(
+        `SELECT d.id, d.mqtt_topic_base, d.actif_id
+         FROM iot_devices d
+         WHERE d.is_active = true 
+         AND d.mqtt_topic_base IS NOT NULL
+         AND $1 LIKE (d.mqtt_topic_base || '%')`,
+        [topic]
+      );
+
+      for (const device of devicesResult.rows) {
+        // Récupérer les configurations de paramètres actives pour ce dispositif
+        const configsResult = await pool.query(
+          `SELECT pc.*, p.type_donnee
+           FROM iot_device_parameter_configs pc
+           LEFT JOIN iot_device_parameters p ON pc.parameter_id = p.id
+           WHERE pc.device_id = $1 AND pc.is_active = true`,
+          [device.id]
+        );
+
+        for (const config of configsResult.rows) {
+          try {
+            // Vérifier si le topic correspond (avec le suffixe)
+            const fullTopic = device.mqtt_topic_base + (config.mqtt_topic_suffix || '');
+            if (topic !== fullTopic) {
+              continue;
+            }
+
+            // Extraire la valeur avec JSONPath
+            const values = JSONPath({ path: config.json_path, json: payloadJson });
+            
+            if (!values || values.length === 0) {
+              logger.debug(`No value found for IoT device ${device.id}, path ${config.json_path}`);
+              continue;
+            }
+
+            let value = values[0];
+
+            // Appliquer transformation
+            value = this.applyTransformation(value, config.transformation, config.factor);
+
+            // Stocker dans l'historique
+            const columnName = this.getValueColumnForType(config.type_donnee);
+            await pool.query(
+              `INSERT INTO iot_device_values_history 
+               (device_id, parameter_id, ${columnName}, mqtt_topic, timestamp)
+               VALUES ($1, $2, $3, $4, NOW())`,
+              [device.id, config.parameter_id, value, topic]
+            );
+
+            // Mettre à jour l'actif si un champ est configuré
+            if (config.champ_definition_id || config.champ_standard) {
+              await this.updateActifField(
+                device.actif_id,
+                config.champ_definition_id,
+                config.champ_standard,
+                value,
+                config.type_donnee
+              );
+            }
+
+            // Vérifier les seuils
+            if (config.type_donnee === 'number' && !isNaN(value)) {
+              const numValue = parseFloat(value);
+              if ((config.seuil_min && numValue < config.seuil_min) ||
+                  (config.seuil_max && numValue > config.seuil_max)) {
+                logger.warn(
+                  `IoT threshold exceeded for device ${device.id}, parameter ${config.parameter_id}: ${numValue}`
+                );
+                // Les alertes seront créées par la fonction verifierSeuils si l'actif est mis à jour
+              }
+            }
+
+            logger.debug(`IoT value processed for device ${device.id}, parameter ${config.parameter_id}: ${value}`);
+
+          } catch (error) {
+            logger.error(`Error processing IoT config ${config.id}:`, error);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Error processing IoT devices:', error);
+    }
+  }
+
+  /**
+   * Obtenir le nom de la colonne pour un type de donnée
+   */
+  getValueColumnForType(typeData) {
+    switch (typeData) {
+      case 'number':
+        return 'valeur_number';
+      case 'boolean':
+        return 'valeur_boolean';
+      case 'date':
+        return 'valeur_date';
+      default:
+        return 'valeur_text';
     }
   }
 

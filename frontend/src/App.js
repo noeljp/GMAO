@@ -21,6 +21,7 @@ import Notifications from './pages/Notifications';
 import PlanificationEnhanced from './pages/PlanificationEnhanced';
 import Rapports from './pages/Rapports';
 import ConfigurationMQTT from './pages/ConfigurationMQTT';
+import IoTDevices from './pages/IoTDevices';
 import TemplatesMaintenance from './pages/TemplatesMaintenance';
 import Pieces from './pages/Pieces';
 import { useAuth } from './context/AuthContext';
@@ -83,6 +84,7 @@ function App() {
                     <Route path="/templates-maintenance" element={<TemplatesMaintenance />} />
                     <Route path="/pieces" element={<Pieces />} />
                     <Route path="/configuration/mqtt" element={<ConfigurationMQTT />} />
+                    <Route path="/iot-devices" element={<IoTDevices />} />
                   </Routes>
                 </Layout>
               </PrivateRoute>
