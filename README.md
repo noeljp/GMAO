@@ -27,62 +27,76 @@ Application complète de gestion de maintenance pour l'industrie.
 
 ## 🚀 Démarrage rapide
 
-### Prérequis
+### Installation automatique (Recommandé)
 
-- Docker et Docker Compose
-- Node.js 18+ (pour développement local)
-- PostgreSQL 15+ (pour développement local)
+```bash
+# Cloner le repository
+git clone https://github.com/noeljp/GMAO.git
+cd GMAO
 
-### Installation avec Docker (Recommandé)
+# Lancer le script d'installation
+./setup.sh
+```
+
+Le script va automatiquement :
+- Vérifier les prérequis (Docker, Docker Compose)
+- Créer le fichier `.env` avec des mots de passe sécurisés
+- Démarrer tous les services
+- Initialiser la base de données
+
+### Installation manuelle
 
 1. Cloner le repository :
 ```bash
-git clone <repo-url>
+git clone https://github.com/noeljp/GMAO.git
 cd GMAO
 ```
 
-2. Démarrer tous les services :
+2. Configurer l'environnement :
 ```bash
-docker-compose up -d
+# Copier le fichier d'exemple et le personnaliser
+cp .env.example .env
+nano .env  # Modifier les mots de passe et secrets
 ```
 
-3. Accéder aux services :
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+3. Démarrer les services :
+```bash
+docker compose up -d
+```
+
+4. Initialiser la base de données :
+```bash
+docker compose exec backend npm run migrate
+```
+
+5. Accéder aux services :
+- Frontend: http://localhost:3010
+- Backend API: http://localhost:5010
 - PostgreSQL: localhost:5432
 
-4. Initialiser la base de données (première fois) :
-```bash
-docker-compose exec backend npm run migrate
-```
+### Prérequis
 
-### Installation locale
+- Docker et Docker Compose
+- Git (pour cloner le repository)
+- 4 GB RAM minimum
+- 10 GB espace disque
 
-#### Backend
-
-```bash
-cd backend
-npm install
-cp .env.example .env
-# Éditer .env avec vos paramètres
-npm run migrate  # Créer la base de données
-npm run dev      # Démarrer le serveur
-```
-
-#### Frontend
-
-```bash
-cd frontend
-npm install
-npm start
-```
+**Pour plus de détails**, voir [INSTALLATION_FROM_SCRATCH.md](./INSTALLATION_FROM_SCRATCH.md)
 
 ## 🔐 Connexion par défaut
 
 - **Email**: admin@gmao.com
-- **Mot de passe**: admin123
+- **Mot de passe**: Admin123!
 
-⚠️ **IMPORTANT** : Changez ces identifiants immédiatement en production !
+⚠️ **IMPORTANT** : Ces identifiants sont à usage de test uniquement. Changez-les immédiatement après la première connexion, surtout en production !
+
+Pour changer le mot de passe admin :
+1. Connectez-vous avec les identifiants par défaut
+2. Accédez à votre profil (icône utilisateur)
+3. Changez le mot de passe
+4. Sauvegardez
+
+En production, vous pouvez aussi générer un nouveau hash bcrypt et le mettre à jour directement dans la base de données.
 
 ## 🔒 Sécurité
 
@@ -101,28 +115,36 @@ Voir [SECURITE.md](./SECURITE.md) pour plus de détails.
 
 ```
 GMAO/
-├── backend/
+├── backend/                  # API Node.js + Express
 │   ├── src/
-│   │   ├── config/          # Configuration (DB, etc.)
+│   │   ├── config/          # Configuration (DB, logger, etc.)
 │   │   ├── database/        # Migrations et seeds
-│   │   ├── middleware/      # Middleware Express
-│   │   ├── routes/          # Routes API
+│   │   ├── middleware/      # Middleware Express (auth, errors)
+│   │   ├── routes/          # Routes API (12 modules)
+│   │   ├── services/        # Services métier (IoT, AI, etc.)
 │   │   └── server.js        # Point d'entrée
-│   ├── Dockerfile
+│   ├── tests/               # Tests unitaires
+│   ├── Dockerfile           # Image Docker dev
+│   ├── Dockerfile.prod      # Image Docker production
 │   └── package.json
 │
-├── frontend/
-│   ├── public/
+├── frontend/                # Application React
 │   ├── src/
 │   │   ├── components/      # Composants réutilisables
 │   │   ├── context/         # Context React (Auth)
 │   │   ├── pages/           # Pages de l'application
 │   │   ├── App.js
 │   │   └── index.js
-│   ├── Dockerfile
+│   ├── Dockerfile           # Image Docker dev
+│   ├── Dockerfile.prod      # Image Docker production
+│   ├── nginx.conf           # Config nginx (prod)
 │   └── package.json
 │
-├── docker-compose.yml
+├── .env.example             # Template variables d'environnement
+├── docker-compose.yml       # Orchestration développement
+├── docker-compose.prod.yml  # Orchestration production
+├── setup.sh                 # Script d'installation automatique
+├── INSTALLATION_FROM_SCRATCH.md  # Guide installation détaillé
 └── README.md
 ```
 
@@ -182,26 +204,27 @@ Voir [proposition de schéma relation.md](./proposition%20de%20schéma%20relatio
 
 ## 🔧 Configuration
 
-### Variables d'environnement Backend (.env)
+### Variables d'environnement
 
+Le projet utilise un fichier `.env` pour la configuration. Copiez `.env.example` et personnalisez :
+
+```bash
+cp .env.example .env
 ```
-PORT=5000
-NODE_ENV=development
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=gmao_db
-DB_USER=postgres
-DB_PASSWORD=postgres
-JWT_SECRET=your-secret-key-change-in-production
-JWT_EXPIRES_IN=24h
-CORS_ORIGIN=http://localhost:3000
-LOG_LEVEL=info
-```
+
+**Variables principales :**
+- `POSTGRES_PASSWORD` : Mot de passe PostgreSQL (à changer !)
+- `JWT_SECRET` : Clé secrète JWT (64+ caractères recommandés)
+- `CORS_ORIGIN` : Origine autorisée pour CORS
+- `NODE_ENV` : `development` ou `production`
 
 ⚠️ **En production** :
-- Utilisez un `JWT_SECRET` fort et unique
-- Restreignez `CORS_ORIGIN` à votre domaine
-- Changez les credentials de la base de données
+- Utilisez des mots de passe forts et uniques
+- Générez un `JWT_SECRET` avec `openssl rand -hex 64`
+- Configurez `CORS_ORIGIN` avec votre domaine
+- Activez HTTPS avec un certificat SSL valide
+
+Voir [CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md) pour la checklist complète.
 
 ## 🤝 Contribution
 
@@ -213,6 +236,11 @@ LOG_LEVEL=info
 
 ## 📄 Documentation de conception
 
+- **[INSTALLATION_FROM_SCRATCH.md](./INSTALLATION_FROM_SCRATCH.md)** - Guide d'installation complet et détaillé
+- **[INSTALLATION_COMPLET.md](./INSTALLATION_COMPLET.md)** - Guide d'installation Windows 11 et AlmaLinux 9
+- **[CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md)** - Checklist de déploiement en production
+- **[SECURITE.md](./SECURITE.md)** - Guide de sécurité et bonnes pratiques
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guide de contribution au projet
 - [Les Tables de base.md](./Les%20Tables%20de%20base.md) - Description des tables
 - [proposition de schéma relation.md](./proposition%20de%20schéma%20relation.md) - Schéma relationnel complet
 - [liste structurée des machines d état.md](./liste%20structurée%20des%20machines%20d%20état%20%28workflows%29%20à%20prévoir%20dans%20une%20GMAO%20industrielle.md) - Workflows et machines d'état
