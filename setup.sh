@@ -116,8 +116,13 @@ main() {
         print_success "Generated secure PostgreSQL password"
         print_success "Generated secure JWT secret"
     else
-        print_warning "OpenSSL not found - using default credentials"
-        print_warning "Please update .env manually with secure passwords!"
+        print_error "OpenSSL not found - cannot generate secure credentials automatically"
+        print_warning "You MUST manually update the following in .env file:"
+        print_warning "  - POSTGRES_PASSWORD (and DB_PASSWORD to match)"
+        print_warning "  - JWT_SECRET"
+        print_info "Generate secure password: head -c 32 /dev/urandom | base64 | tr -d '=+/' | cut -c1-32"
+        print_info "Generate JWT secret: head -c 64 /dev/urandom | base64 | tr -d '=+/'"
+        read -p "Press Enter to continue after updating .env, or Ctrl+C to exit..."
     fi
     
     # Ask about environment
@@ -170,8 +175,19 @@ main() {
     print_success "PostgreSQL is ready"
     
     print_info "Waiting for backend to be ready..."
-    sleep 10
-    print_success "Backend should be ready"
+    COUNTER=0
+    MAX_TRIES=30
+    while ! docker compose -f "$COMPOSE_FILE" exec -T backend node -e "require('http').get('http://localhost:5000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))" >/dev/null 2>&1; do
+        sleep 2
+        COUNTER=$((COUNTER + 1))
+        if [ $COUNTER -ge $MAX_TRIES ]; then
+            print_warning "Backend health check timeout - will attempt migration anyway"
+            break
+        fi
+    done
+    if [ $COUNTER -lt $MAX_TRIES ]; then
+        print_success "Backend is ready"
+    fi
     
     # Initialize database
     print_header "Initializing Database"
