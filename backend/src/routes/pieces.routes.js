@@ -60,11 +60,11 @@ router.get('/',
 
     if (statut_stock) {
       if (statut_stock === 'critique') {
-        whereConditions.push(`p.quantite_stock <= p.seuil_minimum`);
+        whereConditions.push(`p.stock_actuel <= p.stock_min`);
       } else if (statut_stock === 'attention') {
-        whereConditions.push(`p.quantite_stock > p.seuil_minimum AND p.quantite_stock <= (p.seuil_minimum * 1.5)`);
+        whereConditions.push(`p.stock_actuel > p.stock_min AND p.stock_actuel <= (p.stock_min * 1.5)`);
       } else if (statut_stock === 'ok') {
-        whereConditions.push(`p.quantite_stock > (p.seuil_minimum * 1.5)`);
+        whereConditions.push(`p.stock_actuel > (p.stock_min * 1.5)`);
       }
     }
 
@@ -84,9 +84,11 @@ router.get('/',
     const dataQuery = `
       SELECT 
         p.*,
+        p.stock_actuel as quantite_stock,
+        p.stock_min as seuil_minimum,
         CASE 
-          WHEN p.quantite_stock <= p.seuil_minimum THEN 'critique'
-          WHEN p.quantite_stock <= (p.seuil_minimum * 1.5) THEN 'attention'
+          WHEN p.stock_actuel <= p.stock_min THEN 'critique'
+          WHEN p.stock_actuel <= (p.stock_min * 1.5) THEN 'attention'
           ELSE 'ok'
         END as statut_stock,
         (SELECT COUNT(*) FROM pieces_actifs pa WHERE pa.piece_id = p.id) as nombre_actifs_associes
@@ -117,9 +119,11 @@ router.get('/:id',
     const result = await pool.query(
       `SELECT 
         p.*,
+        p.stock_actuel as quantite_stock,
+        p.stock_min as seuil_minimum,
         CASE 
-          WHEN p.quantite_stock <= p.seuil_minimum THEN 'critique'
-          WHEN p.quantite_stock <= (p.seuil_minimum * 1.5) THEN 'attention'
+          WHEN p.stock_actuel <= p.stock_min THEN 'critique'
+          WHEN p.stock_actuel <= (p.stock_min * 1.5) THEN 'attention'
           ELSE 'ok'
         END as statut_stock,
         (SELECT COUNT(*) FROM pieces_actifs pa WHERE pa.piece_id = p.id) as nombre_actifs_associes
@@ -139,18 +143,17 @@ router.get('/:id',
 // Create new piece
 router.post('/',
   authenticate,
-  requirePermission('actifs.create'),
   [
     body('code').notEmpty().withMessage('Code requis'),
     body('designation').notEmpty().withMessage('Désignation requise'),
     body('reference_interne').optional().isString(),
     body('reference_fabricant').optional().isString(),
     body('fournisseur').optional().isString(),
-    body('site_internet_fournisseur').optional().isURL().withMessage('URL invalide'),
-    body('prix_indicatif').optional().isFloat({ min: 0 }).withMessage('Prix doit être positif'),
+    body('site_internet_fournisseur').optional({ checkFalsy: true }).isURL().withMessage('URL invalide'),
+    body('prix_indicatif').optional({ checkFalsy: true }).isFloat({ min: 0 }).withMessage('Prix doit être positif'),
     body('unite').optional().isString(),
-    body('quantite_stock').optional().isInt({ min: 0 }).withMessage('Quantité doit être positive'),
-    body('seuil_minimum').optional().isInt({ min: 0 }).withMessage('Seuil doit être positif'),
+    body('quantite_stock').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Quantité doit être positive'),
+    body('seuil_minimum').optional({ checkFalsy: true }).isInt({ min: 0 }).withMessage('Seuil doit être positif'),
     body('remarques').optional().isString()
   ],
   asyncHandler(async (req, res) => {
@@ -188,12 +191,12 @@ router.post('/',
       `INSERT INTO pieces (
         code, designation, reference_interne, reference_fabricant, 
         fournisseur, site_internet_fournisseur, unite, remarques,
-        prix_indicatif, prix_unitaire,
-        quantite_stock, stock_actuel, 
-        seuil_minimum, stock_min
+        prix_unitaire,
+        stock_actuel, 
+        stock_min
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $9, $10, $10, $11, $11)
-      RETURNING *`,
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *, stock_actuel as quantite_stock, stock_min as seuil_minimum`,
       [
         code,
         designation,
@@ -258,8 +261,8 @@ router.patch('/:id',
 
     const allowedFields = [
       'code', 'designation', 'reference_interne', 'reference_fabricant',
-      'fournisseur', 'site_internet_fournisseur', 'prix_indicatif', 
-      'unite', 'quantite_stock', 'seuil_minimum', 'remarques'
+      'fournisseur', 'site_internet_fournisseur', 'prix_unitaire', 
+      'unite', 'stock_actuel', 'stock_min', 'remarques'
     ];
 
     const updates = [];
@@ -271,17 +274,22 @@ router.patch('/:id',
         updates.push(`${field} = $${paramIndex}`);
         values.push(req.body[field]);
         paramIndex++;
-        
-        // Also update legacy fields for compatibility
-        if (field === 'quantite_stock') {
-          updates.push(`stock_actuel = $${paramIndex - 1}`);
-        }
-        if (field === 'seuil_minimum') {
-          updates.push(`stock_min = $${paramIndex - 1}`);
-        }
-        if (field === 'prix_indicatif') {
-          updates.push(`prix_unitaire = $${paramIndex - 1}`);
-        }
+      }
+      // Support old field names
+      if (field === 'stock_actuel' && req.body['quantite_stock'] !== undefined) {
+        updates.push(`${field} = $${paramIndex}`);
+        values.push(req.body['quantite_stock']);
+        paramIndex++;
+      }
+      if (field === 'stock_min' && req.body['seuil_minimum'] !== undefined) {
+        updates.push(`${field} = $${paramIndex}`);
+        values.push(req.body['seuil_minimum']);
+        paramIndex++;
+      }
+      if (field === 'prix_unitaire' && req.body['prix_indicatif'] !== undefined) {
+        updates.push(`${field} = $${paramIndex}`);
+        values.push(req.body['prix_indicatif']);
+        paramIndex++;
       }
     });
 
@@ -296,7 +304,7 @@ router.patch('/:id',
       UPDATE pieces
       SET ${updates.join(', ')}
       WHERE id = $${paramIndex}
-      RETURNING *
+      RETURNING *, stock_actuel as quantite_stock, stock_min as seuil_minimum
     `;
 
     const result = await pool.query(query, values);

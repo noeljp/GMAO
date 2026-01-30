@@ -640,7 +640,7 @@ router.get('/stats/overview',
         COUNT(CASE WHEN statut = 'actif' THEN 1 END) as active_devices,
         COUNT(CASE WHEN statut = 'inactif' THEN 1 END) as inactive_devices,
         COUNT(CASE WHEN statut = 'erreur' THEN 1 END) as error_devices,
-        COUNT(CASE WHEN date_derniere_communication > NOW() - INTERVAL '1 hour' THEN 1 END) as online_devices
+        COUNT(CASE WHEN dernier_message > NOW() - INTERVAL '1 hour' THEN 1 END) as online_devices
       FROM iot_devices
       WHERE is_active = true
     `);
