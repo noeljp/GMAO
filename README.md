@@ -219,16 +219,19 @@ Voir [proposition de schéma relation.md](./proposition%20de%20schéma%20relatio
 
 ### Variables d'environnement
 
-Le projet utilise un fichier `.env` pour la configuration. Copiez `.env.example` et personnalisez :
+Le projet utilise un fichier `.env` **à la racine du projet** pour la configuration. Copiez `.env.example` et personnalisez :
 
 ```bash
 cp .env.example .env
 ```
 
+**⚠️ Important pour Docker :** Ne créez PAS de fichier `backend/.env` lors de l'utilisation de Docker Compose. Les variables d'environnement sont gérées par le fichier `.env` à la racine et passées aux containers par Docker Compose.
+
 **Variables principales :**
 - `POSTGRES_PASSWORD` : Mot de passe PostgreSQL (à changer !)
+- `DB_PASSWORD` : Doit être identique à `POSTGRES_PASSWORD`
 - `JWT_SECRET` : Clé secrète JWT (64+ caractères recommandés)
-- `CORS_ORIGIN` : Origine autorisée pour CORS
+- `CORS_ORIGIN` : Origine autorisée pour CORS (http://localhost:3010 pour Docker)
 - `NODE_ENV` : `development` ou `production`
 
 ⚠️ **En production** :

@@ -7,10 +7,20 @@
 
 ## 🚀 Démarrage rapide avec Docker (Recommandé)
 
-1. Copier le fichier d'environnement backend :
+**Note:** Utilisez le script d'installation automatique `setup.sh` (Linux/Mac) ou `install_and_run.bat` (Windows) pour une installation guidée.
+
+### Installation manuelle avec Docker :
+
+1. Copier et configurer le fichier d'environnement :
 ```bash
-cp backend/.env.example backend/.env
+cp .env.example .env
+# Optionnel : Générer des mots de passe sécurisés
+# POSTGRES_PASSWORD=$(openssl rand -base64 32 | tr -d "=+/" | cut -c1-32)
+# Mettre à jour POSTGRES_PASSWORD et DB_PASSWORD dans .env
 ```
+
+**⚠️ Important :** Ne créez PAS de fichier `backend/.env` lors de l'utilisation de Docker. 
+Les variables d'environnement sont gérées par le fichier `.env` à la racine et Docker Compose.
 
 2. Démarrer tous les services :
 ```bash
@@ -25,18 +35,21 @@ docker-compose exec backend npm run migrate
 ```
 
 5. Accéder à l'application :
-- Frontend : http://localhost:3000
-- Backend API : http://localhost:5000
+- Frontend : http://localhost:3010
+- Backend API : http://localhost:5010
+- API Health Check : http://localhost:5010/health
 - Base de données : localhost:5432
 
 ## 🔐 Identifiants par défaut
 
 Email : admin@gmao.com  
-Mot de passe : admin123
+Mot de passe : Admin123!
 
 ⚠️ **Changez ces identifiants immédiatement après la première connexion !**
 
-## 💻 Installation locale (Développement)
+## 💻 Installation locale (Développement sans Docker)
+
+**Note:** Cette section est pour le développement local SANS Docker. Si vous utilisez Docker, consultez la section ci-dessus.
 
 ### Backend
 
@@ -45,9 +58,11 @@ cd backend
 npm install
 cp .env.example .env
 
-# Éditer .env avec vos paramètres de base de données
+# ⚠️ IMPORTANT : Éditer .env et changer :
+#   DB_HOST=localhost (au lieu de postgres)
+#   CORS_ORIGIN=http://localhost:3000 (au lieu de 3010)
 
-# Créer la base de données
+# Créer la base de données PostgreSQL locale
 createdb gmao_db
 
 # Exécuter les migrations
@@ -166,16 +181,18 @@ docker-compose ps
 docker-compose logs backend
 ```
 
-3. Vérifier le fichier `.env` :
+3. Vérifier le fichier `.env` à la racine du projet :
 ```bash
-cat backend/.env
+cat .env
+# Assurez-vous que POSTGRES_PASSWORD et DB_PASSWORD sont identiques
 ```
 
 ### Erreur "Cannot connect to database"
 
 1. Attendre que PostgreSQL soit complètement démarré (30s)
-2. Vérifier les credentials dans `.env`
-3. Redémarrer le service backend :
+2. Vérifier que POSTGRES_PASSWORD et DB_PASSWORD sont identiques dans le fichier `.env` à la racine
+3. Vérifier qu'il n'y a PAS de fichier `backend/.env` (qui pourrait interférer avec Docker Compose)
+4. Redémarrer le service backend :
 ```bash
 docker-compose restart backend
 ```
@@ -200,13 +217,11 @@ docker-compose restart backend
 
 1. Vérifier que le backend est accessible :
 ```bash
-curl http://localhost:5000/health
+curl http://localhost:5010/health
 ```
 
-2. Vérifier CORS dans `backend/.env` :
-```
-CORS_ORIGIN=http://localhost:3000
-```
+2. Pour Docker : Les ports doivent être 3010 (frontend) et 5010 (backend)
+3. Pour développement local : Les ports sont 3000 (frontend) et 5000 (backend)
 
 ## 📚 Documentation
 
@@ -223,12 +238,12 @@ CORS_ORIGIN=http://localhost:3000
 
 ## ✅ Checklist de vérification
 
-Après l'installation, vérifier que :
+Après l'installation avec Docker, vérifier que :
 
-- [ ] Le serveur backend répond sur http://localhost:5000/health
-- [ ] Le frontend s'affiche sur http://localhost:3000
-- [ ] La connexion avec admin@gmao.com fonctionne
-- [ ] Les logs sont créés dans `backend/logs/`
+- [ ] Le serveur backend répond sur http://localhost:5010/health
+- [ ] Le frontend s'affiche sur http://localhost:3010
+- [ ] La connexion avec admin@gmao.com / Admin123! fonctionne
+- [ ] Les logs sont créés dans les containers Docker
 - [ ] Le rate limiting fonctionne (test-securite.sh)
 - [ ] La validation des formulaires fonctionne
 
