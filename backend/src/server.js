@@ -45,6 +45,7 @@ app.use('/api/search', require('./routes/search.routes'));
 app.use('/api/notifications', require('./routes/notifications.routes'));
 app.use('/api/mqtt', require('./routes/mqtt.routes'));
 app.use('/api/iot-devices', require('./routes/iot-devices.routes'));
+app.use('/api/apru40', require('./routes/apru40.routes'));
 app.use('/api/compteurs', require('./routes/compteurs.routes'));
 app.use('/api/resources', require('./routes/resources.routes'));
 app.use('/api/ollama', require('./routes/ollama.routes'));
