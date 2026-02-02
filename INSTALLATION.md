@@ -169,6 +169,19 @@ npm test         # Lancer les tests
 
 ## 🐛 Résolution de problèmes
 
+**⚠️ Pour les erreurs courantes (comme "Cannot find module 'mqtt'"), consultez le guide de dépannage complet :**
+
+👉 **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Solutions détaillées pour toutes les erreurs
+
+**Script de correction rapide pour les erreurs de modules :**
+```bash
+# Linux / macOS
+./fix-mqtt-dependencies.sh
+
+# Windows
+fix-mqtt-dependencies.bat
+```
+
 ### Le serveur ne démarre pas
 
 1. Vérifier que PostgreSQL est démarré :
@@ -197,13 +210,29 @@ cat .env
 docker-compose restart backend
 ```
 
-### Erreur "Module not found"
+### Erreur "Module not found" ou "Cannot find module 'mqtt'"
 
+Cette erreur indique que les dépendances Node.js ne sont pas correctement installées dans le conteneur.
+
+**Solution rapide :**
 ```bash
-# Réinstaller les dépendances
-cd backend && npm install
-cd ../frontend && npm install
+# Linux / macOS
+./fix-mqtt-dependencies.sh
+
+# Windows
+fix-mqtt-dependencies.bat
 ```
+
+**Ou manuellement :**
+```bash
+# Reconstruire les conteneurs
+docker-compose down
+docker volume rm gmao_backend_node_modules
+docker-compose build --no-cache backend
+docker-compose up -d
+```
+
+Voir **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** pour plus de détails.
 
 ### Rate limiting bloque toutes les requêtes
 
