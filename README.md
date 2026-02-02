@@ -29,6 +29,8 @@ Application complète de gestion de maintenance pour l'industrie.
 
 ### Installation automatique (Recommandé)
 
+#### Linux / macOS
+
 ```bash
 # Cloner le repository
 git clone https://github.com/noeljp/GMAO.git
@@ -36,6 +38,17 @@ cd GMAO
 
 # Lancer le script d'installation
 ./setup.sh
+```
+
+#### Windows 11
+
+```cmd
+# Cloner le repository
+git clone https://github.com/noeljp/GMAO.git
+cd GMAO
+
+# Lancer le script d'installation
+install_and_run.bat
 ```
 
 Le script va automatiquement :
