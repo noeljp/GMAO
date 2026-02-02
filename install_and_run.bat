@@ -291,6 +291,12 @@ echo   Restart:          %COMPOSE_CMD% -f %COMPOSE_FILE% restart
 echo   View status:      %COMPOSE_CMD% -f %COMPOSE_FILE% ps
 echo.
 
+echo Troubleshooting:
+echo   If you encounter any errors, see: TROUBLESHOOTING.md
+echo   For module errors (e.g., 'Cannot find module'), run:
+echo     fix-mqtt-dependencies.bat
+echo.
+
 echo Installation completed successfully!
 echo For more information, see: WINDOWS_INSTALLATION.md or INSTALLATION_FROM_SCRATCH.md
 echo.
