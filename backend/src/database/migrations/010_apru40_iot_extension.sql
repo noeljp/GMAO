@@ -248,7 +248,6 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_update_gateway_node_count
     AFTER INSERT OR UPDATE OR DELETE ON iot_devices
     FOR EACH ROW
-    WHEN (NEW.gateway_id IS NOT NULL OR OLD.gateway_id IS NOT NULL)
     EXECUTE FUNCTION update_gateway_node_count();
 
 -- 12. Fonction pour mettre à jour last_seen des devices

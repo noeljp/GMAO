@@ -364,8 +364,9 @@ router.post('/nodes/:id/regenerate-pin',
   authenticate,
   requirePermission('actifs.edit'),
   asyncHandler(async (req, res) => {
-    // Générer un PIN aléatoire de 6 chiffres
-    const newPin = Math.floor(100000 + Math.random() * 900000).toString();
+    // Générer un PIN aléatoire de 6 chiffres de manière cryptographiquement sécurisée
+    const crypto = require('crypto');
+    const newPin = crypto.randomInt(100000, 1000000).toString();
 
     const result = await pool.query(
       `UPDATE iot_devices SET
@@ -588,8 +589,10 @@ router.get('/alerts',
     }
 
     if (status) {
-      params.push(status);
-      query += ` AND a.status = $${params.length}`;
+      // Support comma-separated statuses for filtering multiple values
+      const statuses = status.split(',').map(s => s.trim());
+      params.push(statuses);
+      query += ` AND a.status = ANY($${params.length})`;
     }
 
     if (device_id) {
@@ -623,8 +626,9 @@ router.get('/alerts',
       countQuery += ` AND priority = $${countParams.length}`;
     }
     if (status) {
-      countParams.push(status);
-      countQuery += ` AND status = $${countParams.length}`;
+      const statuses = status.split(',').map(s => s.trim());
+      countParams.push(statuses);
+      countQuery += ` AND status = ANY($${countParams.length})`;
     }
     if (device_id) {
       countParams.push(device_id);

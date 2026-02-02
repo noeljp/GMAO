@@ -33,6 +33,7 @@ import {
   Tooltip,
   Divider,
   LinearProgress,
+  Snackbar,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -61,6 +62,7 @@ export default function APRU40Dashboard() {
   const [selectedGateway, setSelectedGateway] = useState(null);
   const [selectedNode, setSelectedNode] = useState(null);
   const [selectedAlert, setSelectedAlert] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const [gatewayForm, setGatewayForm] = useState({
     gateway_id: '',
@@ -170,7 +172,14 @@ export default function APRU40Dashboard() {
     {
       onSuccess: () => {
         queryClient.invalidateQueries('apru40-nodes');
-        alert('PIN régénéré avec succès');
+        setSnackbar({ open: true, message: 'PIN régénéré avec succès', severity: 'success' });
+      },
+      onError: (error) => {
+        setSnackbar({ 
+          open: true, 
+          message: error?.response?.data?.message || 'Erreur lors de la régénération du PIN', 
+          severity: 'error' 
+        });
       },
     }
   );
@@ -890,6 +899,22 @@ export default function APRU40Dashboard() {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for notifications */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }
