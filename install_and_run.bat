@@ -116,9 +116,8 @@ echo.
 REM Generate secure passwords using PowerShell
 echo [INFO] Generating secure passwords...
 
-REM Generate PostgreSQL password
-for /f "delims=" %%i in ('powershell -Command "[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Minimum 0 -Maximum 256 })) -replace '[=+/]',''" ') do set POSTGRES_PASSWORD=%%i
-set POSTGRES_PASSWORD=%POSTGRES_PASSWORD:~0,32%
+REM Generate PostgreSQL password (alphanumeric only for better compatibility)
+for /f "delims=" %%i in ('powershell -Command "-join ((1..32 | ForEach-Object { [char](Get-Random -InputObject ((48..57) + (65..90) + (97..122))) }))"') do set POSTGRES_PASSWORD=%%i
 
 REM Generate JWT secret (64 bytes hex = 128 characters)
 for /f "delims=" %%i in ('powershell -Command "-join ((1..64 | ForEach-Object { '{0:x2}' -f (Get-Random -Minimum 0 -Maximum 256) }))"') do set JWT_SECRET=%%i
@@ -293,7 +292,7 @@ echo   View status:      %COMPOSE_CMD% -f %COMPOSE_FILE% ps
 echo.
 
 echo Installation completed successfully!
-echo For more information, see: INSTALLATION_FROM_SCRATCH.md
+echo For more information, see: WINDOWS_INSTALLATION.md or INSTALLATION_FROM_SCRATCH.md
 echo.
 
 REM Open the application in default browser (optional)
