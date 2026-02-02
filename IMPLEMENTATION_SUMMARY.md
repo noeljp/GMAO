@@ -269,20 +269,21 @@ npm install
 
 ### 3. Configure Environment
 ```bash
-# Backend .env
-cp backend/.env.example backend/.env
-# Edit with database credentials
+# For Docker deployment (recommended):
+cp .env.example .env
+# Edit .env to set POSTGRES_PASSWORD and DB_PASSWORD to the same value
 
-# Frontend (if needed)
-REACT_APP_API_URL=http://localhost:5000
+# For local development without Docker:
+cp backend/.env.example backend/.env
+# Edit backend/.env: set DB_HOST=localhost, CORS_ORIGIN=http://localhost:3000
 ```
 
 ### 4. Start Services
 ```bash
-# With Docker
-docker-compose up
+# With Docker (recommended)
+docker-compose up -d
 
-# Manual
+# Manual local development (without Docker)
 # Terminal 1 - Backend
 cd backend && npm run dev
 
@@ -291,9 +292,13 @@ cd frontend && npm start
 ```
 
 ### 5. Access Application
-- Frontend: http://localhost:3010
-- Backend API: http://localhost:5010
-- Default credentials in seed.sql
+- **Docker deployment:**
+  - Frontend: http://localhost:3010
+  - Backend API: http://localhost:5010
+- **Local development:**
+  - Frontend: http://localhost:3000
+  - Backend API: http://localhost:5000
+- Default credentials: See seed.sql
 
 ## Future Enhancements (Documented)
 
