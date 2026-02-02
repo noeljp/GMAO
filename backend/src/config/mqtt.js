@@ -10,10 +10,37 @@ class MQTTService {
   }
 
   /**
+   * Tester la connexion à la base de données
+   */
+  async testDatabaseConnection(retries = 5, delay = 2000) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        await pool.query('SELECT 1');
+        logger.info('Database connection successful');
+        return true;
+      } catch (error) {
+        logger.warn(`Database connection attempt ${i + 1}/${retries} failed: ${error.message}`);
+        if (i < retries - 1) {
+          logger.info(`Retrying in ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Démarrer tous les brokers actifs
    */
   async startAll() {
     try {
+      // Test database connection first
+      const dbConnected = await this.testDatabaseConnection();
+      if (!dbConnected) {
+        logger.error('Failed to connect to database after multiple retries. MQTT service will not start.');
+        return;
+      }
+
       const result = await pool.query(
         'SELECT * FROM mqtt_brokers WHERE is_active = true'
       );
