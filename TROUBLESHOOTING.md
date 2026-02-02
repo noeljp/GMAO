@@ -1,5 +1,48 @@
 # Guide de dépannage GMAO
 
+## Erreur : PostgreSQL Authentication Failed
+
+### Symptômes
+```
+Error starting MQTT service: password authentication failed for user "postgres"
+error: password authentication failed for user "postgres"
+```
+
+Cette erreur indique que l'application ne peut pas se connecter à PostgreSQL avec les identifiants configurés.
+
+### Solution rapide
+
+**Étape 1 : Vérifier que le fichier `.env` existe**
+```bash
+ls -la .env
+```
+
+**Étape 2 : Si le fichier n'existe pas, le créer**
+```bash
+cp .env.example .env
+```
+
+**Étape 3 : Vérifier que les mots de passe correspondent**
+```bash
+grep "PASSWORD" .env
+# POSTGRES_PASSWORD et DB_PASSWORD doivent être identiques !
+```
+
+**Étape 4 : Supprimer le fichier backend/.env s'il existe (pour Docker)**
+```bash
+rm -f backend/.env
+```
+
+**Étape 5 : Redémarrer les services**
+```bash
+docker compose down
+docker compose up -d
+```
+
+**📖 Pour plus de détails, consultez [TROUBLESHOOTING_POSTGRES_AUTH.md](./TROUBLESHOOTING_POSTGRES_AUTH.md)**
+
+---
+
 ## Erreur : Cannot find module 'mqtt'
 
 ### Symptômes
