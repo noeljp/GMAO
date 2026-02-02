@@ -128,7 +128,7 @@ SELECT
     d.node_id,
     d.nom as node_name,
     d.identifiant_unique as mac_address,
-    d.firmware_version,
+    d.version_firmware as firmware_version,
     d.last_seen,
     d.status,
     d.tamper_count,
