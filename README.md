@@ -29,6 +29,8 @@ Application complète de gestion de maintenance pour l'industrie.
 
 ### Installation automatique (Recommandé)
 
+#### Linux / macOS
+
 ```bash
 # Cloner le repository
 git clone https://github.com/noeljp/GMAO.git
@@ -36,6 +38,17 @@ cd GMAO
 
 # Lancer le script d'installation
 ./setup.sh
+```
+
+#### Windows 11
+
+```cmd
+# Cloner le repository
+git clone https://github.com/noeljp/GMAO.git
+cd GMAO
+
+# Lancer le script d'installation
+install_and_run.bat
 ```
 
 Le script va automatiquement :
@@ -236,6 +249,7 @@ Voir [CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md) pour la checklist comp
 
 ## 📄 Documentation de conception
 
+- **[WINDOWS_INSTALLATION.md](./WINDOWS_INSTALLATION.md)** - 🪟 Guide d'installation rapide pour Windows 11
 - **[INSTALLATION_FROM_SCRATCH.md](./INSTALLATION_FROM_SCRATCH.md)** - Guide d'installation complet et détaillé
 - **[INSTALLATION_COMPLET.md](./INSTALLATION_COMPLET.md)** - Guide d'installation Windows 11 et AlmaLinux 9
 - **[CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md)** - Checklist de déploiement en production

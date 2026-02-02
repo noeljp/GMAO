@@ -402,7 +402,9 @@ sudo sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
 
 ### Sur Windows 11
 
-**1. Ouvrir Git Bash ou Windows Terminal (PowerShell)**
+#### Méthode 1 : Installation automatique (Recommandée)
+
+**1. Ouvrir Git Bash ou Windows Terminal (PowerShell ou cmd)**
 
 ```powershell
 # Créer un dossier pour le projet
@@ -413,6 +415,28 @@ cd C:\Projects
 git clone https://github.com/noeljp/GMAO.git
 cd GMAO
 ```
+
+**2. Vérifier que Docker Desktop est lancé**
+
+- Chercher "Docker Desktop" dans le menu Démarrer
+- Attendre que l'icône Docker dans la barre des tâches soit verte
+- Si erreur, redémarrer Docker Desktop
+
+**3. Lancer le script d'installation automatique**
+
+```cmd
+# Double-cliquer sur install_and_run.bat
+# Ou exécuter depuis cmd/PowerShell :
+install_and_run.bat
+```
+
+Le script va automatiquement :
+- ✅ Vérifier les prérequis (Docker Desktop)
+- ✅ Créer le fichier `.env` avec des mots de passe sécurisés
+- ✅ Démarrer tous les services Docker
+- ✅ Initialiser la base de données
+- ✅ Afficher les URLs d'accès et les identifiants
+- ✅ Proposer d'ouvrir l'application dans le navigateur
 
 **Alternative avec WSL Ubuntu :**
 
@@ -425,13 +449,14 @@ cd projects
 # Cloner le repository
 git clone https://github.com/noeljp/GMAO.git
 cd GMAO
+
+# Utiliser le script Linux
+./setup.sh
 ```
 
-**2. Vérifier que Docker Desktop est lancé**
+#### Méthode 2 : Installation manuelle
 
-- Chercher "Docker Desktop" dans le menu Démarrer
-- Attendre que l'icône Docker dans la barre des tâches soit verte
-- Si erreur, redémarrer Docker Desktop
+**1-2. Même que la méthode automatique**
 
 **3. Démarrer les conteneurs**
 
