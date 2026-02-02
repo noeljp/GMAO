@@ -232,6 +232,11 @@ main() {
     echo -e "  Restart:          docker compose -f $COMPOSE_FILE restart"
     echo -e "  View status:      docker compose -f $COMPOSE_FILE ps"
     
+    echo -e "\n${YELLOW}Troubleshooting:${NC}"
+    echo -e "  If you encounter any errors, see: ${BLUE}TROUBLESHOOTING.md${NC}"
+    echo -e "  For module errors (e.g., 'Cannot find module'), run:"
+    echo -e "    ${BLUE}./fix-mqtt-dependencies.sh${NC}"
+    
     echo -e "\n${GREEN}Installation completed successfully!${NC}"
     echo -e "For more information, see: ${BLUE}INSTALLATION_FROM_SCRATCH.md${NC}\n"
 }

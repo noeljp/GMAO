@@ -250,8 +250,22 @@ Voir [CHECKLIST_PRODUCTION.md](./CHECKLIST_PRODUCTION.md) pour la checklist comp
 4. Push vers la branche (`git push origin feature/AmazingFeature`)
 5. Ouvrir une Pull Request
 
+## 🆘 Dépannage
+
+Si vous rencontrez des erreurs lors de l'installation (ex: "Cannot find module 'mqtt'"), consultez le **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** pour les solutions.
+
+**Script de correction rapide :**
+```bash
+# Linux / macOS
+./fix-mqtt-dependencies.sh
+
+# Windows
+fix-mqtt-dependencies.bat
+```
+
 ## 📄 Documentation de conception
 
+- **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - 🔧 Guide de dépannage et résolution des erreurs courantes
 - **[WINDOWS_INSTALLATION.md](./WINDOWS_INSTALLATION.md)** - 🪟 Guide d'installation rapide pour Windows 11
 - **[INSTALLATION_FROM_SCRATCH.md](./INSTALLATION_FROM_SCRATCH.md)** - Guide d'installation complet et détaillé
 - **[INSTALLATION_COMPLET.md](./INSTALLATION_COMPLET.md)** - Guide d'installation Windows 11 et AlmaLinux 9
