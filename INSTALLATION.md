@@ -234,14 +234,6 @@ docker-compose up -d
 
 Voir **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** pour plus de détails.
 
-### Erreur "Module not found"
-
-```bash
-# Réinstaller les dépendances
-cd backend && npm install
-cd ../frontend && npm install
-```
-
 ### Rate limiting bloque toutes les requêtes
 
 - Attendre 15 minutes

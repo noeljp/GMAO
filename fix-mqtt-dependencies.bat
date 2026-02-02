@@ -120,7 +120,7 @@ goto wait_loop
 
 :wait_timeout
 echo [ATTENTION] Timeout - verifiez les logs manuellement
-echo Commande: docker-compose logs backend
+echo Commande: %COMPOSE_CMD% logs backend
 
 :wait_done
 
