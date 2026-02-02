@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS actifs_champs_options (
 
 CREATE INDEX idx_champs_options_definition ON actifs_champs_options(champ_definition_id, ordre);
 
--- Migrer les options existantes depuis options_liste_json vers la table
+-- Migrer les options existantes depuis valeurs_possibles vers la table
 INSERT INTO actifs_champs_options (champ_definition_id, valeur, libelle, ordre)
 SELECT 
     id,
@@ -140,8 +140,8 @@ SELECT
     opt->>'libelle',
     (row_number() OVER (PARTITION BY id ORDER BY ord))::INTEGER - 1
 FROM actifs_champs_definition,
-     jsonb_array_elements(options_liste_json) WITH ORDINALITY AS t(opt, ord)
-WHERE type_champ = 'select' AND options_liste_json IS NOT NULL
+     jsonb_array_elements(valeurs_possibles) WITH ORDINALITY AS t(opt, ord)
+WHERE type_champ = 'select' AND valeurs_possibles IS NOT NULL
 ON CONFLICT DO NOTHING;
 
 -- =====================================================
