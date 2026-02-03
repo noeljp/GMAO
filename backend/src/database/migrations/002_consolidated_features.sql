@@ -17,12 +17,12 @@
 -- Ajout de la hiérarchie parent-enfant et champs personnalisables
 
 -- 1. Ajouter la relation parent-enfant aux actifs
-ALTER TABLE actifs ADD COLUMN parent_id UUID REFERENCES actifs(id);
-ALTER TABLE actifs ADD COLUMN niveau INT DEFAULT 0;
-ALTER TABLE actifs ADD COLUMN chemin_hierarchique TEXT; -- Ex: /parent/enfant/petit-enfant
+ALTER TABLE actifs ADD COLUMN IF NOT EXISTS parent_id UUID REFERENCES actifs(id);
+ALTER TABLE actifs ADD COLUMN IF NOT EXISTS niveau INT DEFAULT 0;
+ALTER TABLE actifs ADD COLUMN IF NOT EXISTS chemin_hierarchique TEXT; -- Ex: /parent/enfant/petit-enfant
 
 -- 2. Créer une table pour les types de champs personnalisables
-CREATE TABLE actifs_champs_definition (
+CREATE TABLE IF NOT EXISTS actifs_champs_definition (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     type_actif_id UUID REFERENCES actifs_types(id) ON DELETE CASCADE,
     nom VARCHAR(100) NOT NULL, -- nom technique du champ (ex: capacite_electrique)
@@ -39,7 +39,7 @@ CREATE TABLE actifs_champs_definition (
 );
 
 -- 3. Créer une table pour les valeurs des champs personnalisés
-CREATE TABLE actifs_champs_valeurs (
+CREATE TABLE IF NOT EXISTS actifs_champs_valeurs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     actif_id UUID REFERENCES actifs(id) ON DELETE CASCADE,
     champ_definition_id UUID REFERENCES actifs_champs_definition(id) ON DELETE CASCADE,
@@ -54,8 +54,8 @@ CREATE TABLE actifs_champs_valeurs (
 );
 
 -- 4. Ajouter un index sur parent_id pour les requêtes hiérarchiques
-CREATE INDEX idx_actifs_parent_id ON actifs(parent_id);
-CREATE INDEX idx_actifs_niveau ON actifs(niveau);
+CREATE INDEX IF NOT EXISTS idx_actifs_parent_id ON actifs(parent_id);
+CREATE INDEX IF NOT EXISTS idx_actifs_niveau ON actifs(niveau);
 
 -- 5. Créer une fonction pour calculer le chemin hiérarchique
 CREATE OR REPLACE FUNCTION update_actif_chemin_hierarchique()
@@ -77,15 +77,16 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 6. Créer le trigger
+DROP TRIGGER IF EXISTS trigger_actif_chemin_hierarchique ON actifs;
 CREATE TRIGGER trigger_actif_chemin_hierarchique
     BEFORE INSERT OR UPDATE OF parent_id, code_interne ON actifs
     FOR EACH ROW
     EXECUTE FUNCTION update_actif_chemin_hierarchique();
 
 -- 7. Ajouter des index pour les champs personnalisés
-CREATE INDEX idx_actifs_champs_valeurs_actif ON actifs_champs_valeurs(actif_id);
-CREATE INDEX idx_actifs_champs_valeurs_champ ON actifs_champs_valeurs(champ_definition_id);
-CREATE INDEX idx_actifs_champs_definition_type ON actifs_champs_definition(type_actif_id);
+CREATE INDEX IF NOT EXISTS idx_actifs_champs_valeurs_actif ON actifs_champs_valeurs(actif_id);
+CREATE INDEX IF NOT EXISTS idx_actifs_champs_valeurs_champ ON actifs_champs_valeurs(champ_definition_id);
+CREATE INDEX IF NOT EXISTS idx_actifs_champs_definition_type ON actifs_champs_definition(type_actif_id);
 
 -- 8. Ajouter des commentaires
 COMMENT ON COLUMN actifs.parent_id IS 'Actif parent dans la hiérarchie (ex: un moteur peut être parent d''un roulement)';
@@ -97,7 +98,7 @@ COMMENT ON TABLE actifs_champs_valeurs IS 'Valeurs des champs personnalisés pou
 -- Permet de récupérer des données depuis des brokers MQTT et mettre à jour les actifs
 
 -- 1. Table des brokers MQTT
-CREATE TABLE mqtt_brokers (
+CREATE TABLE IF NOT EXISTS mqtt_brokers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     nom VARCHAR(255) NOT NULL,
     host VARCHAR(255) NOT NULL,
@@ -121,7 +122,7 @@ CREATE TABLE mqtt_brokers (
 );
 
 -- 2. Table des souscriptions MQTT (topics)
-CREATE TABLE mqtt_subscriptions (
+CREATE TABLE IF NOT EXISTS mqtt_subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     broker_id UUID REFERENCES mqtt_brokers(id) ON DELETE CASCADE,
     topic VARCHAR(500) NOT NULL, -- Ex: sensors/temperature/+, factory/machine/#
@@ -133,7 +134,7 @@ CREATE TABLE mqtt_subscriptions (
 );
 
 -- 3. Table de mapping entre topics MQTT et champs d'actifs
-CREATE TABLE mqtt_actif_mappings (
+CREATE TABLE IF NOT EXISTS mqtt_actif_mappings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     subscription_id UUID REFERENCES mqtt_subscriptions(id) ON DELETE CASCADE,
     actif_id UUID REFERENCES actifs(id) ON DELETE CASCADE,
@@ -152,7 +153,7 @@ CREATE TABLE mqtt_actif_mappings (
 );
 
 -- 4. Table d'historique des messages MQTT reçus
-CREATE TABLE mqtt_messages_log (
+CREATE TABLE IF NOT EXISTS mqtt_messages_log (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     broker_id UUID REFERENCES mqtt_brokers(id) ON DELETE CASCADE,
     subscription_id UUID REFERENCES mqtt_subscriptions(id),
@@ -168,14 +169,14 @@ CREATE TABLE mqtt_messages_log (
 );
 
 -- 5. Index pour performance
-CREATE INDEX idx_mqtt_brokers_active ON mqtt_brokers(is_active);
-CREATE INDEX idx_mqtt_subscriptions_broker ON mqtt_subscriptions(broker_id);
-CREATE INDEX idx_mqtt_subscriptions_active ON mqtt_subscriptions(broker_id, is_active);
-CREATE INDEX idx_mqtt_mappings_subscription ON mqtt_actif_mappings(subscription_id);
-CREATE INDEX idx_mqtt_mappings_actif ON mqtt_actif_mappings(actif_id);
-CREATE INDEX idx_mqtt_messages_log_received ON mqtt_messages_log(received_at);
-CREATE INDEX idx_mqtt_messages_log_broker ON mqtt_messages_log(broker_id);
-CREATE INDEX idx_mqtt_messages_log_processed ON mqtt_messages_log(processed);
+CREATE INDEX IF NOT EXISTS idx_mqtt_brokers_active ON mqtt_brokers(is_active);
+CREATE INDEX IF NOT EXISTS idx_mqtt_subscriptions_broker ON mqtt_subscriptions(broker_id);
+CREATE INDEX IF NOT EXISTS idx_mqtt_subscriptions_active ON mqtt_subscriptions(broker_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_mqtt_mappings_subscription ON mqtt_actif_mappings(subscription_id);
+CREATE INDEX IF NOT EXISTS idx_mqtt_mappings_actif ON mqtt_actif_mappings(actif_id);
+CREATE INDEX IF NOT EXISTS idx_mqtt_messages_log_received ON mqtt_messages_log(received_at);
+CREATE INDEX IF NOT EXISTS idx_mqtt_messages_log_broker ON mqtt_messages_log(broker_id);
+CREATE INDEX IF NOT EXISTS idx_mqtt_messages_log_processed ON mqtt_messages_log(processed);
 
 -- 6. Fonction pour nettoyer les vieux logs (>30 jours)
 CREATE OR REPLACE FUNCTION cleanup_old_mqtt_logs()
@@ -187,6 +188,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 7. Vues utiles
+DROP VIEW IF EXISTS v_mqtt_status;
 CREATE VIEW v_mqtt_status AS
 SELECT 
     b.id as broker_id,
